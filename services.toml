@@ -1,0 +1,119 @@
+[[service]]
+id = "jellyfin"
+name = "Jellyfin"
+url = "https://jellyfin.org"
+health_url = "https://github.com/jellyfin/jellyfin"
+icon = "🎬"
+description = "Streaming media server for movies, shows and music."
+category = "Media"
+port = 8096
+
+[[service]]
+id = "navidrome"
+name = "Navidrome"
+url = "https://www.navidrome.org/"
+health_url = "https://github.com/navidrome/navidrome"
+icon = "🎵"
+description = "Self-hosted music streaming with Subsonic API."
+category = "Media"
+port = 4533
+
+[[service]]
+id = "komga"
+name = "Komga"
+url = "https://komga.org/"
+health_url = "https://github.com/gotson/komga"
+icon = "📚"
+description = "Manga, comics and ebook library server."
+category = "Media"
+port = 25600
+
+[[service]]
+id = "vaultwarden"
+name = "Vaultwarden"
+url = "https://www.vaultwarden.net"
+health_url = "https://github.com/dani-garcia/vaultwarden"
+icon = "🔐"
+description = "Lightweight Bitwarden-compatible password manager."
+category = "Productivity"
+port = 8222
+
+[[service]]
+id = "paperless"
+name = "Paperless-ngx"
+url = "https://docs.paperless-ngx.com"
+health_url = "https://github.com/paperless-ngx/paperless-ngx"
+icon = "📄"
+description = "Scan, index and archive all your documents."
+category = "Productivity"
+port = 8000
+
+[[service]]
+id = "vikunja"
+name = "Vikunja"
+url = "https://vikunja.io"
+health_url = "https://github.com/go-vikunja/vikunja"
+icon = "✅"
+description = "The to-do app to organize your life."
+category = "Productivity"
+port = 3456
+
+[[service]]
+id = "forgejo"
+name = "forgejo"
+url = "https://forgejo.org"
+health_url = "https://github.com/forgejo/forgejo"
+icon = "🐙"
+description = "Self-hosted Git service with CI and packages."
+category = "Development"
+port = 3000
+
+[[service]]
+id = "woodpecker"
+name = "Woodpecker CI"
+url = "https://woodpecker-ci.org"
+health_url = "https://github.com/woodpecker-ci/woodpecker"
+icon = "🪵"
+description = "CI/CD server backed by your Git repositories."
+category = "Development"
+port = 8000
+
+[[service]]
+id = "forgejo-runner"
+name = "Forgejo Runner"
+url = "https://forgejo.org/docs/latest/admin/actions/"
+health_url = "https://github.com/forgejo/runner"
+icon = "🏃"
+description = "Action runner for Forgejo and Gitea pipelines."
+category = "Development"
+port = 9000
+
+[[service]]
+id = "pihole"
+name = "Pi-hole"
+url = "https://pi-hole.net"
+health_url = "https://github.com/pi-hole/pi-hole"
+icon = "🕳️"
+description = "Network-wide ad blocking DNS sinkhole."
+category = "Infrastructure"
+port = 80
+
+[[service]]
+id = "adguard"
+name = "AdGuard Home"
+url = "https://adguard.com/en/welcome.html"
+health_url = "https://github.com/AdguardTeam/AdGuardHome"
+icon = "🛡️"
+description = "DNS server with ad and tracker blocking."
+category = "Infrastructure"
+port = 3000
+
+[[service]]
+id = "uptime-kuma"
+name = "Uptime Kuma"
+url = "https://uptimekuma.co"
+health_url = "https://github.com/louislam/uptime-kuma"
+icon = "📈"
+description = "Monitoring and status page for all your services."
+category = "Infrastructure"
+port = 3001
