@@ -36,11 +36,14 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
 
+      - name: Install deps
+        run: gleam deps download
+
       - name: Build modules
         run: gleam build
 
-      # - name: Run tests
-      #   run: gleam test
+      - name: Run tests
+        run: gleam test
 
       - name: Build site
         run: gleam run -m build/pipeline
