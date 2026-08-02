@@ -22,7 +22,7 @@ import gleam/list
 import gleam/string
 import simplifile
 
-const config_path = "services.toml"
+const config_path = "config/services.toml"
 
 const dist_dir = "dist"
 
