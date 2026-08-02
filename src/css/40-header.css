@@ -1,0 +1,107 @@
+.header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 24px;
+    padding: 22px 26px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 26px;
+    color: #04130d;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    box-shadow: 0 0 30px #34e0a173;
+}
+
+.title {
+    font-size: 22px;
+    background: linear-gradient(
+        120deg,
+        #e8edff 10%,
+        var(--green) 55%,
+        var(--blue)
+    );
+    background-clip: text;
+    color: transparent;
+}
+
+.subtitle {
+    font-size: 12px;
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+}
+
+.clock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 10px 18px;
+    border-inline: 1px solid var(--border);
+}
+
+.clock-time {
+    font: 600 22px var(--mono);
+    color: var(--green);
+}
+
+.clock-date {
+    font: 11px var(--mono);
+    color: var(--faint);
+}
+
+.stats {
+    display: flex;
+    gap: 10px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 66px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #ffffff08;
+    border: 1px solid var(--border);
+}
+
+.stat-value {
+    font: 700 22px/1 var(--mono);
+}
+
+.stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--faint);
+}
+
+.stat.online .stat-value {
+    color: var(--green);
+}
+
+.stat.checking .stat-value {
+    color: var(--amber);
+}
+
+.stat.offline .stat-value {
+    color: var(--red);
+}

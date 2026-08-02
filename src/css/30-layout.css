@@ -1,0 +1,15 @@
+.wrap {
+    width: 100%;
+    max-width: 1280px;
+    margin: auto;
+    padding: 32px 28px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}

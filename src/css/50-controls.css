@@ -1,0 +1,71 @@
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.search {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    max-width: 420px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--faint);
+}
+
+.search-input {
+    width: 100%;
+    padding: 11px 16px 11px 40px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    outline: 0;
+}
+
+.search-input:focus {
+    border-color: var(--hot);
+    box-shadow: 0 0 0 3px #38bdf81f;
+}
+
+.pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pill,
+.refresh {
+    padding: 9px 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--dim);
+    background: #ffffff08;
+}
+
+.pill.active {
+    color: #04130d;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    border-color: transparent;
+    font-weight: 600;
+}
+
+.refresh {
+    margin-left: auto;
+    border-radius: 12px;
+    color: var(--text);
+    background: var(--panel2);
+}
+
+.pill:focus-visible,
+.refresh:focus-visible,
+.card:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+}
