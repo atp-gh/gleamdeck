@@ -38,8 +38,8 @@ Currently, service cards only support a single Emoji or text character as an ico
 
 - [x] Support [selfh.st](https://selfh.st/icons/) icon URL integration for fetching standardized service logos
 - [x] Support images URL integration for icon
-- [ ] Support relative paths in the `icon` field to reference local SVG/PNG assets (e.g., `static/icons/jellyfin.svg`)
-- [ ] Build pipeline optimization: automatically detect and copy referenced custom icon assets into the `dist/` directory
+- [x] Support relative paths in the `icon` field to reference local SVG/PNG assets (e.g., `static/icons/jellyfin.svg`)
+- [x] Build pipeline optimization: automatically detect and copy referenced custom icon assets into the `dist/` directory
 - [x] Update the frontend rendering logic to dynamically render an Emoji or an `<img>` tag based on the `icon` value
 - [ ] Support a configurable global fallback icon for services with missing icons or failed image loads
 - [x] Ensure proper browser caching for image assets to maintain fast dashboard load times

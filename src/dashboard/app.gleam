@@ -304,7 +304,7 @@ fn pill(active: Bool, label: String, msg: Msg) -> Element(Msg) {
 
 fn render_service_icon(icon: String, service_name: String) -> Element(Msg) {
   case presentation.icon_source(icon) {
-    presentation.RemoteIcon(url) ->
+    presentation.ImageIcon(url) ->
       html.span([attr.class("card-icon")], [
         html.img([
           attr.class("card-icon-image"),

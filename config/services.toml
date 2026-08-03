@@ -1,9 +1,19 @@
 [[service]]
+id = "gleamdeck"
+name = "GleamDeck"
+url = "https://github.com/atp-gh/gleamdeck"
+health_url = "https://github.com/atp-gh/gleamdeck"
+icon = "icons/gleamdeck.png"
+description = "A lightweight, configuration-driven dashboard for self-hosted services, built with gleam and lustre."
+category = "Project"
+port = 0
+
+[[service]]
 id = "jellyfin"
 name = "Jellyfin"
 url = "https://jellyfin.org"
 health_url = "https://github.com/jellyfin/jellyfin"
-icon = "sh:jellyfin"
+icon = "🎬"
 description = "Streaming media server for movies, shows and music."
 category = "Media"
 port = 8096
@@ -13,7 +23,7 @@ id = "navidrome"
 name = "Navidrome"
 url = "https://www.navidrome.org/"
 health_url = "https://github.com/navidrome/navidrome"
-icon = "sh:navidrome"
+icon = "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/navidrome.webp"
 description = "Self-hosted music streaming with Subsonic API."
 category = "Media"
 port = 4533
@@ -103,17 +113,7 @@ id = "adguard"
 name = "AdGuard Home"
 url = "https://adguard.com/en/welcome.html"
 health_url = "https://github.com/AdguardTeam/AdGuardHome"
-icon = "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/adguard-home.webp"
+icon = "sh:adguard-home"
 description = "DNS server with ad and tracker blocking."
 category = "Infrastructure"
 port = 3000
-
-[[service]]
-id = "uptime-kuma"
-name = "Uptime Kuma"
-url = "https://uptimekuma.co"
-health_url = "https://github.com/louislam/uptime-kuma"
-icon = "sh:uptime-kuma"
-description = "Monitoring and status page for all your services."
-category = "Infrastructure"
-port = 3001
