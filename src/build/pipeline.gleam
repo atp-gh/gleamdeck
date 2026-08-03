@@ -39,6 +39,7 @@ pub fn main() -> Nil {
   bundle_spa()
   copy_directory_contents(static_dir, dist_dir)
 
+  write_file(dist_dir <> "/config.json", config_json(config))
   write_file(dist_dir <> "/services.json", services_json(services))
   write_file(dist_dir <> "/index.html", index_html(config, css_files))
 
@@ -231,6 +232,18 @@ fn write_file(path: String, content: String) -> Nil {
 
     Error(error) -> panic_file_error("Could not write " <> path, error)
   }
+}
+
+fn config_json(config: AppConfig) -> String {
+  json.object([
+    #("title", json.string(config.title)),
+    #("description", json.string(config.description)),
+    #("language", json.string(config.language)),
+    #("timezone", json.string(config.timezone)),
+    #("favicon", json.string(config.favicon)),
+  ])
+  |> json.to_string
+  |> string.append("\n")
 }
 
 fn services_json(services: List(ServiceConfig)) -> String {

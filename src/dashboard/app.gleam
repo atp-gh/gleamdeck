@@ -2,11 +2,11 @@
 
 import dashboard/presentation
 import dashboard/runtime
+import data/config as app_config
 import data/service_collection
 import data/services.{
   type Service, type ServiceConfig, type Status, Checking, Offline, Online,
 }
-
 import effect/clock
 import effect/health
 import gleam/dict.{type Dict}
@@ -29,6 +29,8 @@ pub type LoadState {
 
 pub type Model {
   Model(
+    config: app_config.AppConfig,
+    config_error: Option(String),
     services: List(Service),
     load_state: LoadState,
     query: String,
@@ -39,6 +41,7 @@ pub type Model {
 }
 
 pub type Msg {
+  ConfigLoaded(Result(app_config.AppConfig, String))
   ServicesLoaded(Result(List(ServiceConfig), String))
   SetQuery(String)
   SelectCategory(Option(String))
@@ -49,8 +52,11 @@ pub type Msg {
 
 pub fn init(_args) -> #(Model, Effect(Msg)) {
   let now = clock.now_ms()
+
   let model =
     Model(
+      config: app_config.default(),
+      config_error: None,
       services: [],
       load_state: Loading,
       query: "",
@@ -58,11 +64,27 @@ pub fn init(_args) -> #(Model, Effect(Msg)) {
       now:,
       refreshed_at: now,
     )
-  #(model, effect.batch([tick(), load_services()]))
+
+  #(
+    model,
+    effect.batch([
+      tick(),
+      load_config(),
+      load_services(),
+    ]),
+  )
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    ConfigLoaded(Ok(config)) -> {
+      #(Model(..model, config:, config_error: None), effect.none())
+    }
+
+    ConfigLoaded(Error(reason)) -> {
+      #(Model(..model, config_error: Some(reason)), effect.none())
+    }
+
     ServicesLoaded(Ok(configs)) -> {
       let services = list.map(configs, services.from_config)
 
@@ -109,6 +131,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
+fn load_config() -> Effect(Msg) {
+  runtime.load_config_json(ConfigLoaded)
+}
+
 fn load_services() -> Effect(Msg) {
   runtime.load_services_json(ServicesLoaded)
 }
@@ -127,6 +153,7 @@ fn refresh_all(items: List(Service)) -> Effect(Msg) {
         dispatch(HealthResult(services.id(item), ok))
       })
     })
+
     Nil
   })
 }
@@ -147,19 +174,41 @@ pub fn view(model: Model) -> Element(Msg) {
     html.div([attr.class("wrap")], [
       header(model, total, online, counts),
       controls(model, categories),
-      case model.load_state {
-        Loading -> notice("Loading services…", "notice loading")
-        LoadFailed(reason) ->
-          notice("Could not load services: " <> reason, "notice error")
-        Loaded ->
-          html.section(
-            [attr.class("grid"), attr.attribute("aria-label", "services")],
-            list.index_map(visible, render_card),
-          )
-      },
+      config_notice(model.config_error),
+      services_content(model.load_state, visible),
       footer(model),
     ]),
   ])
+}
+
+fn config_notice(config_error: Option(String)) -> Element(Msg) {
+  case config_error {
+    Some(reason) ->
+      notice("Using default configuration: " <> reason, "notice error")
+
+    None -> html.text("")
+  }
+}
+
+fn services_content(
+  load_state: LoadState,
+  visible: List(Service),
+) -> Element(Msg) {
+  case load_state {
+    Loading -> notice("Loading services…", "notice loading")
+
+    LoadFailed(reason) ->
+      notice("Could not load services: " <> reason, "notice error")
+
+    Loaded ->
+      html.section(
+        [
+          attr.class("grid"),
+          attr.attribute("aria-label", "services"),
+        ],
+        list.index_map(visible, render_card),
+      )
+  }
 }
 
 fn notice(message: String, classes: String) -> Element(Msg) {
@@ -178,18 +227,18 @@ fn header(
     html.div([attr.class("brand")], [
       html.div([attr.class("logo")], [html.text("◈")]),
       html.div([attr.class("brand-text")], [
-        html.h1([attr.class("title")], [html.text("Gleam Deck")]),
+        html.h1([attr.class("title")], [html.text(model.config.title)]),
         html.p([attr.class("subtitle")], [
-          html.text("self-hosted panel"),
+          html.text(model.config.description),
         ]),
       ]),
     ]),
     html.div([attr.class("clock")], [
       html.span([attr.class("clock-time")], [
-        html.text(clock.format_time(model.now)),
+        html.text(clock.format_time(model.now, model.config.timezone)),
       ]),
       html.span([attr.class("clock-date")], [
-        html.text(clock.format_date(model.now)),
+        html.text(clock.format_date(model.now, model.config.timezone)),
       ]),
     ]),
     html.div([attr.class("stats")], [

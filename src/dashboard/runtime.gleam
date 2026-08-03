@@ -1,12 +1,28 @@
 //// Browser runtime operations for the dashboard.
 ////
-//// Loads the generated services.json file and decodes its service
-//// configuration for the dashboard application.
+//// Loads generated JSON configuration files and decodes them for the
+//// dashboard application.
 
+import data/config.{type AppConfig, AppConfig}
 import data/services.{type ServiceConfig, ServiceConfig}
 import gleam/dynamic/decode
 import lustre/effect.{type Effect}
 import rsvp
+
+pub fn load_config_json(
+  to_message: fn(Result(AppConfig, String)) -> message,
+) -> Effect(message) {
+  let handler =
+    rsvp.expect_json(config_decoder(), fn(response) {
+      case response {
+        Ok(config) -> to_message(Ok(config))
+
+        Error(_) -> to_message(Error("Could not load or decode config.json"))
+      }
+    })
+
+  rsvp.get("./config.json", handler)
+}
 
 pub fn load_services_json(
   to_message: fn(Result(List(ServiceConfig), String)) -> message,
@@ -21,6 +37,22 @@ pub fn load_services_json(
     })
 
   rsvp.get("./services.json", handler)
+}
+
+fn config_decoder() -> decode.Decoder(AppConfig) {
+  use title <- decode.field("title", decode.string)
+  use description <- decode.field("description", decode.string)
+  use language <- decode.field("language", decode.string)
+  use timezone <- decode.field("timezone", decode.string)
+  use favicon <- decode.field("favicon", decode.string)
+
+  decode.success(AppConfig(
+    title:,
+    description:,
+    language:,
+    timezone:,
+    favicon:,
+  ))
 }
 
 fn services_decoder() -> decode.Decoder(List(ServiceConfig)) {

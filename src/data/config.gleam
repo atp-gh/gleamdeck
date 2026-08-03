@@ -7,7 +7,6 @@ pub type AppConfig {
     language: String,
     timezone: String,
     favicon: String,
-    footer: String,
   )
 }
 
@@ -22,6 +21,5 @@ pub fn default() -> AppConfig {
     language: "en",
     timezone: "UTC",
     favicon: "images/gleamdeck.avif",
-    footer: "Built with Gleam + Lustre",
   )
 }

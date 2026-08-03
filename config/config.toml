@@ -1,7 +1,7 @@
 [site]
 title = "Gleam Deck"
 description = "Self-hosted services dashboard"
-language = "en"
-timezone = "UTC"
 favicon = "images/gleamdeck.avif"
-footer = "Built with Gleam + Lustre"
+language = "en"
+
+timezone = "UTC"

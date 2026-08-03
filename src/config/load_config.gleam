@@ -68,9 +68,8 @@ fn decode(source: String) -> Result(AppConfig, String) {
   use language <- result.try(required_string(site, "language"))
   use timezone <- result.try(required_string(site, "timezone"))
   use favicon <- result.try(required_string(site, "favicon"))
-  use footer <- result.try(required_string(site, "footer"))
 
-  Ok(AppConfig(title:, description:, language:, timezone:, favicon:, footer:))
+  Ok(AppConfig(title:, description:, language:, timezone:, favicon:))
 }
 
 fn required_table(
