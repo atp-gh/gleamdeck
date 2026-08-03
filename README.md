@@ -2,7 +2,7 @@
 
 A lightweight, configuration-driven dashboard for self-hosted services, built with [gleam](https://gleam.run/) and [lustre](https://hexdocs.pm/lustre/).
 
-GleamDeck turns a simple `services.toml` file into a responsive static dashboard. It provides service shortcuts, categories, search, live reachability checks, and service status summaries without requiring a backend or database.
+GleamDeck turns a simple `config/services.toml` file into a responsive static dashboard. It provides service shortcuts, categories, search, live reachability checks, and service status summaries without requiring a backend or database.
 
 [![License](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/atp-gh/gleamdeck/deployments)
@@ -15,7 +15,7 @@ GleamDeck turns a simple `services.toml` file into a responsive static dashboard
 
 - Built with Gleam and Lustre
 - Pure static output with no application server required
-- Service configuration through `services.toml`
+- Service configuration through `config/services.toml`
 - Browser-side service reachability checks
 - Search across service names, descriptions, and categories
 - Category-based filtering
@@ -46,14 +46,17 @@ The dashboard also includes aggregate counts for total, reachable, probing, and 
 
 GleamDeck uses a small static build pipeline:
 
-1. `services.toml` is parsed by a purpose-built Gleam configuration parser.
-2. The service definitions are converted into `dist/services.json`.
+1. `config/services.toml` and `config/config.toml` are parsed by a purpose-built Gleam configuration parser.
+2. The service definitions are converted into `dist/services.json` and `dist/config.json`.
 3. The Lustre application is compiled to JavaScript.
 4. Bun bundles the compiled application and its dependencies into `dist/app.mjs`.
-5. CSS and static assets are copied into `dist/`.
-6. The finished `dist/` directory can be hosted by any static web server.
+5. CSS files under `src/css/` are minified and inlined into the generated `index.html`.
+6. Static assets from `static/` are copied into `dist/`.
+7. The finished `dist/` directory can be hosted by any static web server.
 
-At runtime, the browser loads `services.json`, renders the Lustre application, and performs reachability checks for the configured services.
+At runtime, the browser loads `services.json` and `config.json`, renders the Lustre application, and performs reachability checks for the configured services.
+
+> 📐 For an in-depth look at the model, messages, effects, build pipeline, and module responsibilities, see [docs/architecture.md](docs/architecture.md).
 
 ## Requirements
 
@@ -71,15 +74,15 @@ bun --version
 
 ## Quickly start
 
-```
+```sh
 gleam build
-gleam run -m build/pipeline
-bunx serve dist
+bun run build
+bun run dev
 ```
 
-visit `http://localhost:3000` in browser.
+visit `http://localhost:3333` in browser.
 
-##
+---
 
 ## Getting Started
 
@@ -98,7 +101,7 @@ gleam build
 
 ### 3. Configure your services
 
-Edit `services.toml` in the project root:
+Edit `config/services.toml`:
 
 ```toml
 [[service]]
@@ -112,33 +115,55 @@ category = "Media"
 port = 8096
 ```
 
-### 4. Build the dashboard
+### 4. Configure site and metadata
 
-```sh
-gleam run -m build/pipeline
+Edit `config/config.toml` to customize the dashboard title, description, and timezone:
+
+```toml
+[meta]
+title = "Gleam Deck"
+description = "Self-hosted services dashboard"
+favicon = "images/gleamdeck.avif"
+language = "en"
+
+[site]
+title = "My Gleam Deck"
+subtitle = "My Self-hosted services"
+timezone = "UTC"
 ```
 
-The generated site will be written to `dist`.
+### 5. Build the dashboard
 
-### 5. Preview locally
+```sh
+bun run build
+```
 
-Because GleamDeck loads `services.json` through an HTTP request, open it through a local web server instead of opening `index.html` directly with a `file://` URL.
+The generated site will be written to `dist/`.
+
+### 6. Preview locally
+
+Because GleamDeck loads `services.json` through an HTTP request, open it through a local web server.
 
 Using Bun:
 
 ```sh
-bunx serve dist
+bun run dev
 ```
 
 Then open:
 
 ```text
-http://localhost:8000
+http://localhost:3333
 ```
 
 ## Configuration
 
-Services are configured using repeated `[[service]]` blocks.
+GleamDeck is configured through two TOML files:
+
+- `config/config.toml` — site metadata, language, favicon, and timezone
+- `config/services.toml` — repeated `[[service]]` blocks describing each entry
+
+A minimal service block looks like this:
 
 ```toml
 [[service]]
@@ -152,88 +177,32 @@ category = "Infrastructure"
 port = 443
 ```
 
-### Available fields
-
-| Field         | Required | Default        | Description                                   |
-| ------------- | -------: | -------------- | --------------------------------------------- |
-| `name`        |      Yes | None           | Human-readable service name                   |
-| `url`         |      Yes | None           | Destination opened when the card is selected  |
-| `id`          |       No | Value of `url` | Stable identifier used for status updates     |
-| `health_url`  |       No | Value of `url` | URL used for browser-side reachability checks |
-| `icon`        |       No | `▣`            | Text or emoji shown on the service card       |
-| `description` |       No | Empty string   | Short service description                     |
-| `category`    |       No | `Other`        | Category used by the filter controls          |
-| `port`        |       No | `0`            | Displayed service port; `0` hides the port    |
-
-### Minimal configuration
-
-Only `name` and `url` are required:
+Site metadata is split into `[meta]` (document-level) and `[site]` (dashboard-level) tables:
 
 ```toml
-[[service]]
-name = "Home Assistant"
-url = "https://home.example.com"
+[meta]
+title = "Gleam Deck"
+description = "Self-hosted services dashboard"
+favicon = "images/gleamdeck.avif"
+language = "en"
+
+[site]
+title = "My Gleam Deck"
+subtitle = "My Self-hosted services"
+timezone = "UTC"
 ```
 
-This produces the equivalent defaults:
+> 📘 For the complete field reference, default values, parser limitations, and examples, see [docs/configuration.md](docs/configuration.md).
 
-```toml
-id = "https://home.example.com"
-health_url = "https://home.example.com"
-icon = "▣"
-description = ""
-category = "Other"
-port = 0
-```
+## Architecture
 
-### Separate destination and health URLs
+GleamDeck follows an Elm-style architecture through Lustre.
 
-The page users visit does not need to be the same URL used for reachability checks:
+- **Model** stores loaded services, configuration loading state, search query, active category, and timestamps.
+- **Messages** such as `ServicesLoaded`, `SetQuery`, `SelectCategory`, `RefreshAll`, `HealthResult`, and `Tick` drive the update loop.
+- **Effects** are kept outside the pure update and view logic: service configuration is loaded through `rsvp`, while health checks, clock functions, and build-time shell commands are exposed through small JavaScript FFIs.
 
-```toml
-[[service]]
-id = "paperless"
-name = "Paperless-ngx"
-url = "https://docs.example.com"
-health_url = "https://docs.example.com/api/status/"
-icon = "📄"
-description = "Document management and searchable archive."
-category = "Productivity"
-port = 8000
-```
-
-Using a lightweight public health endpoint can make checks faster and more reliable.
-
-## Configuration Parser Limitations
-
-The current parser is intentionally small and is designed specifically for GleamDeck service blocks. It is not a complete TOML implementation.
-
-Currently supported:
-
-- Repeated `[[service]]` blocks
-- `key = value` assignments
-- Quoted string values
-- Integer ports
-- Line comments beginning with `#`
-- Blank lines
-
-Keep each assignment on one line:
-
-```toml
-name = "Forgejo"
-```
-
-Avoid advanced TOML syntax such as:
-
-- Multiline strings
-- Arrays
-- Inline tables
-- Escaped TOML string sequences
-- Nested tables
-- Values containing unescaped `#` characters
-- Values containing additional `=` characters
-
-Invalid or incomplete service blocks cause the build to stop with an explanatory error.
+> 📐 For the full architecture walkthrough — model, messages, effects, build pipeline, and module map — see [docs/architecture.md](docs/architecture.md).
 
 ## Health Checks
 
@@ -271,114 +240,20 @@ For public dashboards, avoid exposing private hostnames, internal addresses, tok
 
 ## Development
 
-### Run the build pipeline
+GleamDeck is developed with Gleam and Bun. Common commands:
 
 ```sh
-gleam run -m build/pipeline
+gleam build      # download and compile dependencies
+bun run build    # run the full static build pipeline
+bun run dev      # live development server with auto-reload
+bun run check    # gleam check && gleam test
+bun run test     # run Gleam tests
+gleam format     # format the source code
 ```
 
-The pipeline performs the following operations:
+The build pipeline parses configuration, clears and recreates `dist/`, bundles the Lustre SPA with Bun, inlines CSS, copies static assets, and generates `services.json`, `config.json`, and `index.html`.
 
-- Parses `services.toml`
-- Clears and recreates `dist/`
-- Bundles the browser application with Bun
-- Copies CSS files from `src/css/`
-- Copies files from `static/`, when present
-- Generates `services.json`
-- Generates `index.html`
-
-### Check the project
-
-```sh
-gleam check
-```
-
-### Format the source code
-
-```sh
-gleam format
-```
-
-### Run tests
-
-```sh
-gleam test
-```
-
-## Project Structure
-
-```text
-gleamdeck/
-├── gleam.toml
-├── services.toml
-├── src/
-│ ├── build/
-│ │ ├── config.gleam
-│ │ ├── generate.gleam
-│ │ └── pipeline.gleam
-│ ├── dashboard/
-│ │ ├── app.gleam
-│ │ ├── runtime.gleam
-│ │ └── service.gleam
-│ ├── effect/
-│ │ ├── clock.gleam
-│ │ └── health.gleam
-│ ├── ffi/
-│ │ ├── clock.mjs
-│ │ ├── health.mjs
-│ │ └── shell.ffi.mjs
-│ ├── css/
-│ │ └── app.css
-│ └── dashboard.gleam
-├── static/
-└── dist/
-```
-
-### Main modules
-
-- `build/config.gleam` parses the service configuration.
-- `build/generate.gleam` generates JSON and the HTML entry document.
-- `build/pipeline.gleam` controls the complete static build.
-- `dashboard/app.gleam` contains the Lustre model, messages, update logic, and view.
-- `dashboard/service.gleam` defines service types and collection helpers.
-- `dashboard/runtime.gleam` loads the generated service data.
-- `effect/health.gleam` exposes browser health-check effects.
-- `effect/clock.gleam` exposes browser clock functions.
-
-## Architecture
-
-GleamDeck follows an Elm-style architecture through Lustre.
-
-### Model
-
-The model stores:
-
-- Loaded services
-- Configuration loading state
-- Search query
-- Active category
-- Current timestamp
-- Last refresh timestamp
-
-### Messages
-
-The application responds to messages such as:
-
-- `ServicesLoaded`
-- `SetQuery`
-- `SelectCategory`
-- `RefreshAll`
-- `HealthResult`
-- `Tick`
-
-### Effects
-
-Side effects are kept outside the pure update and view logic:
-
-- Service configuration is loaded through `rsvp`
-- Health checks are exposed through a small JavaScript FFI
-- Clock functions are exposed through a small JavaScript FFI
-- Bundling commands are executed by the build-only shell FFI
+> 🛠️ For the full development guide — project structure, module responsibilities, build pipeline internals, testing, and live reload — see [docs/development.md](docs/development.md).
 
 ## Deployment
 
@@ -388,39 +263,14 @@ Deploy the contents of `dist/` to any static hosting service.
 
 Configure the document root to point to the generated `dist/` directory.
 
-Example with Caddy:
-
-```caddyfile
-gleamdeck.example.com {
-root * /srv/gleamdeck/dist
-file_server
-}
-```
-
-Example with Nginx:
-
-```nginx
-server {
-listen 80;
-server_name gleamdeck.example.com;
-
-root /srv/gleamdeck/dist;
-index index.html;
-
-location / {
-try_files $uri $uri/ /index.html;
-}
-}
-```
-
 ## Security Notes
 
 GleamDeck is a client-side navigation and reachability dashboard. It does not provide authentication, authorization, proxying, or access control.
 
 Keep the following in mind:
 
-- Everything in `services.json` is visible to dashboard visitors.
-- Do not place credentials or secrets in `services.toml`.
+- Everything in `services.json` and `config.json` is visible to dashboard visitors.
+- Do not place credentials or secrets in `config/services.toml` or `config/config.toml`.
 - Do not include authenticated URLs containing access tokens.
 - Protect the deployed dashboard separately if it contains private infrastructure details.
 - Prefer HTTPS for both GleamDeck and all configured services.
