@@ -13,7 +13,9 @@
 ////
 ////   gleam run -m build/pipeline
 
+import config/load_config
 import config/load_services
+import data/config.{type AppConfig}
 import data/services.{type ServiceConfig}
 import gleam/int
 import gleam/io
@@ -22,8 +24,6 @@ import gleam/list
 import gleam/string
 import simplifile
 
-const config_path = "config/services.toml"
-
 const dist_dir = "dist"
 
 const static_dir = "static"
@@ -31,16 +31,16 @@ const static_dir = "static"
 const css_dir = "src/css"
 
 pub fn main() -> Nil {
-  let source = read_services_config()
-  let services = decode_services(source)
+  let config = load_config.load()
+  let services = load_services.load()
   let css_files = discover_css_files()
 
   reset_dist()
   bundle_spa()
-  // copy_css_files()
   copy_directory_contents(static_dir, dist_dir)
+
   write_file(dist_dir <> "/services.json", services_json(services))
-  write_file(dist_dir <> "/index.html", index_html(css_files))
+  write_file(dist_dir <> "/index.html", index_html(config, css_files))
 
   io.println(
     "✓ built "
@@ -49,35 +49,10 @@ pub fn main() -> Nil {
     <> int.to_string(list.length(services))
     <> " services, "
     <> int.to_string(list.length(css_files))
-    <> " CSS files inlined, pure ESM)",
+    <> " CSS files inlined, timezone "
+    <> config.timezone
+    <> ", pure ESM)",
   )
-}
-
-fn read_services_config() -> String {
-  case simplifile.read(from: config_path) {
-    Ok(source) -> source
-
-    Error(error) -> {
-      let message =
-        "Could not read "
-        <> config_path
-        <> ": "
-        <> simplifile.describe_error(error)
-
-      panic as message
-    }
-  }
-}
-
-fn decode_services(source: String) -> List(ServiceConfig) {
-  case load_services.decode(source) {
-    Ok(services) -> services
-
-    Error(reason) -> {
-      let message = "Invalid " <> config_path <> ": " <> reason
-      panic as message
-    }
-  }
 }
 
 fn reset_dist() -> Nil {
@@ -456,16 +431,25 @@ fn trim_css_spaces_around_tokens(css: String) -> String {
   |> string.replace(" )", ")")
 }
 
-fn index_html(css_files: List(String)) -> String {
+fn index_html(config: AppConfig, css_files: List(String)) -> String {
   let css = inline_css(css_files)
   "<!doctype html>"
-  <> "<html lang=\"en\">"
+  <> "<html lang=\""
+  <> config.language
+  <> "\">"
   <> "<head>"
   <> "<meta charset=\"UTF-8\">"
   <> "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
   <> "<meta name=\"color-scheme\" content=\"dark\">"
-  <> "<title>Gleam Deck</title>"
-  <> "<link rel=\"icon\" type=\"image/x-icon\" href=\"images/gleamdeck.avif\">"
+  <> "<title>"
+  <> config.title
+  <> "</title>"
+  <> "<meta name='description' content='"
+  <> config.description
+  <> "'>"
+  <> "<link rel=\"icon\" type=\"image/x-icon\" href=\""
+  <> config.favicon
+  <> "\">"
   <> "<style id=\"gleamdeck-css\">"
   <> css
   <> "</style>"

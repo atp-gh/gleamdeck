@@ -1,12 +1,35 @@
-//// Parsing and decoding for services.toml.
+//// Reading and decoding for config/services.toml.
 
 import data/services.{type ServiceConfig, ServiceConfig}
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/result
 import gleam/string
+import simplifile
 import tom.{type Toml}
 
+const config_path = "config/services.toml"
+
+/// Read and decode all configured services.
+///
+/// The configuration path is fixed inside this module so callers do not need
+/// to pass or duplicate it.
+pub fn load() -> List(ServiceConfig) {
+  config_path
+  |> read_config
+  |> decode_or_panic
+}
+
+/// Read the raw services configuration source.
+///
+/// Most callers should use `load`.
+pub fn read_source() -> String {
+  read_config(config_path)
+}
+
+/// Decode services from TOML source.
+///
+/// This is useful for tests and build tools that already have TOML content.
 pub fn decode(source: String) -> Result(List(ServiceConfig), String) {
   use document <- result.try(
     tom.parse(source)
@@ -37,6 +60,30 @@ pub fn decode(source: String) -> Result(List(ServiceConfig), String) {
   }
 }
 
+fn read_config(path: String) -> String {
+  case simplifile.read(from: path) {
+    Ok(source) -> source
+
+    Error(error) -> {
+      let message =
+        "Could not read " <> path <> ": " <> simplifile.describe_error(error)
+
+      panic as message
+    }
+  }
+}
+
+fn decode_or_panic(source: String) -> List(ServiceConfig) {
+  case decode(source) {
+    Ok(services) -> services
+
+    Error(reason) -> {
+      let message = "Invalid " <> config_path <> ": " <> reason
+      panic as message
+    }
+  }
+}
+
 fn decode_service(table: Dict(String, Toml)) -> Result(ServiceConfig, String) {
   use id <- result.try(required_string(table, "id"))
   use name <- result.try(required_string(table, "name"))
@@ -64,7 +111,11 @@ fn required_string(
   field: String,
 ) -> Result(String, String) {
   case dict.get(table, field) {
-    Ok(tom.String(value)) -> Ok(value)
+    Ok(tom.String(value)) ->
+      case string.trim(value) {
+        "" -> Error("Field `" <> field <> "` must not be empty")
+        _ -> Ok(value)
+      }
 
     Ok(value) ->
       Error(
@@ -98,5 +149,5 @@ fn required_int(
 }
 
 fn format_parse_error(error: tom.ParseError) -> String {
-  "Could not parse services.toml: " <> string.inspect(error)
+  "Could not parse " <> config_path <> ": " <> string.inspect(error)
 }

@@ -62,7 +62,7 @@ id = \"broken\"
 
   let assert Error(reason) = result
 
-  assert string.starts_with(reason, "Could not parse services.toml:")
+  assert string.starts_with(reason, "Could not parse config/services.toml:")
 }
 
 pub fn missing_service_entries_returns_error_test() {
