@@ -10,17 +10,23 @@ pub type MetaConfig {
 }
 
 pub type SiteConfig {
-  SiteConfig(
-    title: String,
-    subtitle: String,
-    timezone: String,
-  )
+  SiteConfig(title: String, subtitle: String, timezone: String)
 }
 
 pub type BuildConfig {
-  BuildConfig(
-    meta: MetaConfig,
-    site: SiteConfig,
+  BuildConfig(meta: MetaConfig, site: SiteConfig)
+}
+
+pub fn default_build() -> BuildConfig {
+  BuildConfig(meta: default_meta(), site: default_site())
+}
+
+pub fn default_meta() -> MetaConfig {
+  MetaConfig(
+    title: "Gleam Deck",
+    description: "Self-hosted services dashboard",
+    language: "en",
+    favicon: "images/gleamdeck.avif",
   )
 }
 

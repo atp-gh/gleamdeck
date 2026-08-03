@@ -12,13 +12,12 @@ import tom.{type Toml}
 
 const config_path = "config/config.toml"
 
-pub fn load() -> BuildConfig {
-  config_path
-  |> read_config
-  |> decode_or_panic
+pub fn load() -> Result(BuildConfig, String) {
+  use source <- result.try(read_config(config_path))
+  decode(source)
 }
 
-pub fn read_source() -> String {
+pub fn read_source() -> Result(String, String) {
   read_config(config_path)
 }
 
@@ -54,27 +53,14 @@ fn decode_site(table: Dict(String, Toml)) -> Result(SiteConfig, String) {
   Ok(SiteConfig(title:, subtitle:, timezone:))
 }
 
-fn decode_or_panic(source: String) -> BuildConfig {
-  case decode(source) {
-    Ok(config) -> config
-
-    Error(reason) -> {
-      let message = "Invalid " <> config_path <> ": " <> reason
-      panic as message
-    }
-  }
-}
-
-fn read_config(path: String) -> String {
+fn read_config(path: String) -> Result(String, String) {
   case simplifile.read(from: path) {
-    Ok(source) -> source
+    Ok(source) -> Ok(source)
 
-    Error(error) -> {
-      let message =
-        "Could not read " <> path <> ": " <> simplifile.describe_error(error)
-
-      panic as message
-    }
+    Error(error) ->
+      Error(
+        "Could not read " <> path <> ": " <> simplifile.describe_error(error),
+      )
   }
 }
 

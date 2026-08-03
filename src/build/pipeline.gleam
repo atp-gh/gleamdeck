@@ -15,7 +15,7 @@
 
 import config/load_config
 import config/load_services
-import data/config.{type MetaConfig, type SiteConfig}
+import data/config.{type BuildConfig, type MetaConfig, type SiteConfig} as app_config
 import data/services.{type ServiceConfig}
 import gleam/int
 import gleam/io
@@ -31,7 +31,7 @@ const static_dir = "static"
 const css_dir = "src/css"
 
 pub fn main() -> Nil {
-  let config = load_config.load()
+  let config = load_build_config()
   let services = load_services.load()
   let css_files = discover_css_files()
 
@@ -233,6 +233,22 @@ fn write_file(path: String, content: String) -> Nil {
     Ok(_) -> Nil
 
     Error(error) -> panic_file_error("Could not write " <> path, error)
+  }
+}
+
+fn load_build_config() -> BuildConfig {
+  case load_config.load() {
+    Ok(config) -> config
+
+    Error(reason) -> {
+      io.println(
+        "Warning: could not load config/config.toml: "
+        <> reason
+        <> ". Using default configuration.",
+      )
+
+      app_config.default_build()
+    }
   }
 }
 
