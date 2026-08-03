@@ -65,6 +65,17 @@
     border: 1px solid var(--border);
 }
 
+.card-icon-image {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.card-icon-text {
+    line-height: 1;
+}
+
 .card-status {
     display: inline-flex;
     align-items: center;

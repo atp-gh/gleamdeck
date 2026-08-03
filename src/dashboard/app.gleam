@@ -302,6 +302,31 @@ fn pill(active: Bool, label: String, msg: Msg) -> Element(Msg) {
   html.button([attr.class(classes), event.on_click(msg)], [html.text(label)])
 }
 
+fn render_service_icon(icon: String, service_name: String) -> Element(Msg) {
+  case presentation.icon_source(icon) {
+    presentation.RemoteIcon(url) ->
+      html.span([attr.class("card-icon")], [
+        html.img([
+          attr.class("card-icon-image"),
+          attr.src(url),
+          attr.alt(service_name <> " icon"),
+          attr.attribute("loading", "lazy"),
+          attr.attribute("decoding", "async"),
+          attr.attribute("referrerpolicy", "no-referrer"),
+        ]),
+      ])
+
+    presentation.TextIcon(value) ->
+      html.span(
+        [
+          attr.class("card-icon card-icon-text"),
+          attr.attribute("aria-hidden", "true"),
+        ],
+        [html.text(value)],
+      )
+  }
+}
+
 fn render_card(item: Service, index: Int) -> Element(Msg) {
   let config = item.config
   let word = presentation.status_class(item.status)
@@ -316,7 +341,7 @@ fn render_card(item: Service, index: Int) -> Element(Msg) {
     [
       html.div([attr.class("card-glow")], []),
       html.div([attr.class("card-top")], [
-        html.span([attr.class("card-icon")], [html.text(config.icon)]),
+        render_service_icon(config.icon, config.name),
         html.span([attr.class("card-status " <> word)], [
           html.span([attr.class("dot")], []),
           html.text(presentation.status_label(item.status)),
