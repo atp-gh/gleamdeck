@@ -15,7 +15,7 @@
 
 import config/load_config
 import config/load_services
-import data/config.{type AppConfig}
+import data/config.{type MetaConfig, type SiteConfig}
 import data/services.{type ServiceConfig}
 import gleam/int
 import gleam/io
@@ -39,9 +39,11 @@ pub fn main() -> Nil {
   bundle_spa()
   copy_directory_contents(static_dir, dist_dir)
 
-  write_file(dist_dir <> "/config.json", config_json(config))
+  write_file(dist_dir <> "/config.json", site_config_json(config.site))
+
   write_file(dist_dir <> "/services.json", services_json(services))
-  write_file(dist_dir <> "/index.html", index_html(config, css_files))
+
+  write_file(dist_dir <> "/index.html", index_html(config.meta, css_files))
 
   io.println(
     "✓ built "
@@ -51,7 +53,7 @@ pub fn main() -> Nil {
     <> " services, "
     <> int.to_string(list.length(css_files))
     <> " CSS files inlined, timezone "
-    <> config.timezone
+    <> config.site.timezone
     <> ", pure ESM)",
   )
 }
@@ -234,13 +236,11 @@ fn write_file(path: String, content: String) -> Nil {
   }
 }
 
-fn config_json(config: AppConfig) -> String {
+fn site_config_json(config: SiteConfig) -> String {
   json.object([
     #("title", json.string(config.title)),
-    #("description", json.string(config.description)),
-    #("language", json.string(config.language)),
+    #("subtitle", json.string(config.subtitle)),
     #("timezone", json.string(config.timezone)),
-    #("favicon", json.string(config.favicon)),
   ])
   |> json.to_string
   |> string.append("\n")
@@ -444,24 +444,24 @@ fn trim_css_spaces_around_tokens(css: String) -> String {
   |> string.replace(" )", ")")
 }
 
-fn index_html(config: AppConfig, css_files: List(String)) -> String {
+fn index_html(meta: MetaConfig, css_files: List(String)) -> String {
   let css = inline_css(css_files)
   "<!doctype html>"
   <> "<html lang=\""
-  <> config.language
+  <> meta.language
   <> "\">"
   <> "<head>"
   <> "<meta charset=\"UTF-8\">"
   <> "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
   <> "<meta name=\"color-scheme\" content=\"dark\">"
   <> "<title>"
-  <> config.title
+  <> meta.title
   <> "</title>"
   <> "<meta name='description' content='"
-  <> config.description
+  <> meta.description
   <> "'>"
   <> "<link rel=\"icon\" type=\"image/x-icon\" href=\""
-  <> config.favicon
+  <> meta.favicon
   <> "\">"
   <> "<style id=\"gleamdeck-css\">"
   <> css

@@ -3,14 +3,14 @@
 //// Loads generated JSON configuration files and decodes them for the
 //// dashboard application.
 
-import data/config.{type AppConfig, AppConfig}
+import data/config.{type SiteConfig, SiteConfig}
 import data/services.{type ServiceConfig, ServiceConfig}
 import gleam/dynamic/decode
 import lustre/effect.{type Effect}
 import rsvp
 
 pub fn load_config_json(
-  to_message: fn(Result(AppConfig, String)) -> message,
+  to_message: fn(Result(SiteConfig, String)) -> message,
 ) -> Effect(message) {
   let handler =
     rsvp.expect_json(config_decoder(), fn(response) {
@@ -39,20 +39,12 @@ pub fn load_services_json(
   rsvp.get("./services.json", handler)
 }
 
-fn config_decoder() -> decode.Decoder(AppConfig) {
+fn config_decoder() -> decode.Decoder(SiteConfig) {
   use title <- decode.field("title", decode.string)
-  use description <- decode.field("description", decode.string)
-  use language <- decode.field("language", decode.string)
+  use subtitle <- decode.field("subtitle", decode.string)
   use timezone <- decode.field("timezone", decode.string)
-  use favicon <- decode.field("favicon", decode.string)
 
-  decode.success(AppConfig(
-    title:,
-    description:,
-    language:,
-    timezone:,
-    favicon:,
-  ))
+  decode.success(SiteConfig(title:, subtitle:, timezone:))
 }
 
 fn services_decoder() -> decode.Decoder(List(ServiceConfig)) {

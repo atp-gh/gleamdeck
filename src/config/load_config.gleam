@@ -1,6 +1,9 @@
 //// Reading and decoding for config/config.toml.
 
-import data/config.{type AppConfig, AppConfig}
+import data/config.{
+  type BuildConfig, type MetaConfig, type SiteConfig, BuildConfig, MetaConfig,
+  SiteConfig,
+}
 import gleam/dict.{type Dict}
 import gleam/result
 import gleam/string
@@ -9,29 +12,49 @@ import tom.{type Toml}
 
 const config_path = "config/config.toml"
 
-/// Read and decode the application configuration.
-///
-/// The configuration path is intentionally fixed inside this module so callers
-/// do not need to know where the configuration file is stored.
-pub fn load() -> AppConfig {
+pub fn load() -> BuildConfig {
   config_path
   |> read_config
-  |> decode_app_config
+  |> decode_or_panic
 }
 
-/// Read the raw application configuration source.
-///
-/// Most callers should use `load`. This function is public for build-time code
-/// that needs access to the original TOML source.
 pub fn read_source() -> String {
   read_config(config_path)
 }
 
-/// Decode application configuration from TOML source.
-///
-/// This remains public so tests and tools can decode in-memory configuration
-/// without accessing the filesystem.
-pub fn decode_app_config(source: String) -> AppConfig {
+pub fn decode(source: String) -> Result(BuildConfig, String) {
+  use document <- result.try(
+    tom.parse(source)
+    |> result.map_error(format_parse_error),
+  )
+
+  use meta_table <- result.try(required_table(document, "meta"))
+  use site_table <- result.try(required_table(document, "site"))
+
+  use meta <- result.try(decode_meta(meta_table))
+  use site <- result.try(decode_site(site_table))
+
+  Ok(BuildConfig(meta:, site:))
+}
+
+fn decode_meta(table: Dict(String, Toml)) -> Result(MetaConfig, String) {
+  use title <- result.try(required_string(table, "title"))
+  use description <- result.try(required_string(table, "description"))
+  use language <- result.try(required_string(table, "language"))
+  use favicon <- result.try(required_string(table, "favicon"))
+
+  Ok(MetaConfig(title:, description:, language:, favicon:))
+}
+
+fn decode_site(table: Dict(String, Toml)) -> Result(SiteConfig, String) {
+  use title <- result.try(required_string(table, "title"))
+  use subtitle <- result.try(required_string(table, "subtitle"))
+  use timezone <- result.try(required_string(table, "timezone"))
+
+  Ok(SiteConfig(title:, subtitle:, timezone:))
+}
+
+fn decode_or_panic(source: String) -> BuildConfig {
   case decode(source) {
     Ok(config) -> config
 
@@ -53,23 +76,6 @@ fn read_config(path: String) -> String {
       panic as message
     }
   }
-}
-
-fn decode(source: String) -> Result(AppConfig, String) {
-  use document <- result.try(
-    tom.parse(source)
-    |> result.map_error(format_parse_error),
-  )
-
-  use site <- result.try(required_table(document, "site"))
-
-  use title <- result.try(required_string(site, "title"))
-  use description <- result.try(required_string(site, "description"))
-  use language <- result.try(required_string(site, "language"))
-  use timezone <- result.try(required_string(site, "timezone"))
-  use favicon <- result.try(required_string(site, "favicon"))
-
-  Ok(AppConfig(title:, description:, language:, timezone:, favicon:))
 }
 
 fn required_table(

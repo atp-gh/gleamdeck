@@ -29,7 +29,7 @@ pub type LoadState {
 
 pub type Model {
   Model(
-    config: app_config.AppConfig,
+    config: app_config.SiteConfig,
     config_error: Option(String),
     services: List(Service),
     load_state: LoadState,
@@ -41,7 +41,7 @@ pub type Model {
 }
 
 pub type Msg {
-  ConfigLoaded(Result(app_config.AppConfig, String))
+  ConfigLoaded(Result(app_config.SiteConfig, String))
   ServicesLoaded(Result(List(ServiceConfig), String))
   SetQuery(String)
   SelectCategory(Option(String))
@@ -55,7 +55,7 @@ pub fn init(_args) -> #(Model, Effect(Msg)) {
 
   let model =
     Model(
-      config: app_config.default(),
+      config: app_config.default_site(),
       config_error: None,
       services: [],
       load_state: Loading,
@@ -229,7 +229,7 @@ fn header(
       html.div([attr.class("brand-text")], [
         html.h1([attr.class("title")], [html.text(model.config.title)]),
         html.p([attr.class("subtitle")], [
-          html.text(model.config.description),
+          html.text(model.config.subtitle),
         ]),
       ]),
     ]),

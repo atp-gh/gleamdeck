@@ -1,25 +1,34 @@
-//// Domain types and defaults for the dashboard configuration.
+//// Build-time and runtime dashboard configuration.
 
-pub type AppConfig {
-  AppConfig(
+pub type MetaConfig {
+  MetaConfig(
     title: String,
     description: String,
     language: String,
-    timezone: String,
     favicon: String,
   )
 }
 
-/// Configuration used before config.json has finished loading.
-///
-/// Keeping a default configuration allows services.json and config.json to be
-/// loaded independently without blocking the application startup.
-pub fn default() -> AppConfig {
-  AppConfig(
+pub type SiteConfig {
+  SiteConfig(
+    title: String,
+    subtitle: String,
+    timezone: String,
+  )
+}
+
+pub type BuildConfig {
+  BuildConfig(
+    meta: MetaConfig,
+    site: SiteConfig,
+  )
+}
+
+/// Runtime configuration used before config.json has loaded.
+pub fn default_site() -> SiteConfig {
+  SiteConfig(
     title: "Gleam Deck",
-    description: "Self-hosted services dashboard",
-    language: "en",
+    subtitle: "Self-hosted services dashboard",
     timezone: "UTC",
-    favicon: "images/gleamdeck.avif",
   )
 }

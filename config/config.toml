@@ -1,7 +1,10 @@
-[site]
+[meta]
 title = "Gleam Deck"
 description = "Self-hosted services dashboard"
 favicon = "images/gleamdeck.avif"
 language = "en"
 
+[site]
+title = "My Gleam Deck"
+subtitle = "My Self-hosted services"
 timezone = "UTC"
