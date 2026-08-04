@@ -27,7 +27,6 @@ The current TOML parser is intentionally minimal to meet initial needs. This ver
 - [x] Replace the simple parser with a fully featured TOML parsing library (e.g., upgrading the `tom` dependency)
 - [x] Support advanced TOML syntax (multiline strings, arrays, inline tables, escaped characters)
 - [x] Introduce config schema validation to catch invalid configurations at build time with clear error reporting
-- [x] Allow optional fields in `config.toml` so users can override specific defaults without defining the entire file
 - [x] Add unit tests specifically for configuration parsing and validation
 
 ## v0.3.0 - Custom Service Icons
