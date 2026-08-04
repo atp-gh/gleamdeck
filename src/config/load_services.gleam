@@ -92,7 +92,7 @@ fn decode_service(table: Dict(String, Toml)) -> Result(ServiceConfig, String) {
   use icon <- result.try(required_string(table, "icon"))
   use description <- result.try(required_string(table, "description"))
   use category <- result.try(required_string(table, "category"))
-  use port <- result.try(required_int(table, "port"))
+  use port <- result.try(required_port(table, "port"))
 
   Ok(ServiceConfig(
     id:,
@@ -145,6 +145,19 @@ fn required_int(
       )
 
     Error(_) -> Error("Missing required field `" <> field <> "`")
+  }
+}
+
+fn required_port(
+  table: Dict(String, Toml),
+  field: String,
+) -> Result(Int, String) {
+  use port <- result.try(required_int(table, field))
+
+  case port >= 0 && port <= 65_535 {
+    True -> Ok(port)
+
+    False -> Error("Field `" <> field <> "` must be between 0 and 65535")
   }
 }
 
