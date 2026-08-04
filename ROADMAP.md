@@ -31,13 +31,23 @@ The current TOML parser is intentionally minimal to meet initial needs. This ver
 
 ## v0.3.0 - Custom Service Icons
 
-**Status: Doing / Current**
+**Status: Done**
 
 Currently, service cards only support a single Emoji or text character as an icon. This version will expand the icon system to allow custom vector graphics or images, making the dashboard more personalized.
 
-- [x] Support [selfh.st](https://selfh.st/icons/) icon URL integration for fetching standardized service logos
+- [x] Support [selfh.st](https://selfh.st/icons/), [Simple Icons](https://simpleicons.org/), [home lab icons](https://github.com/homarr-labs/dashboard-icons) and [Material Design Icons](https://pictogrammers.com/library/mdi/) icon URL integration for fetching standardized service logos
 - [x] Support images URL integration for icon
 - [x] Support relative paths in the `icon` field to reference local SVG/PNG assets (e.g., `static/icons/jellyfin.svg`)
 - [x] Build pipeline optimization: automatically detect and copy referenced custom icon assets into the `dist/` directory
 - [x] Update the frontend rendering logic to dynamically render an Emoji or an `<img>` tag based on the `icon` value
 - [x] Ensure proper browser caching for image assets to maintain fast dashboard load times
+
+## v0.4.0 - Configuration System Refactor
+
+**Status: Doing / Current**
+
+Complete the configuration system refactor by introducing explicit optional-field semantics across service and dashboard configuration.
+
+- [x] Refactor `config/services.toml` to model optional service fields with `Option` while keeping essential fields required
+- [ ] Refactor `config/config.toml` to model optional dashboard settings with `Option` and provide sensible fallback behavior
+- [ ] Add `health` Add an optional `health_check` boolean setting to `config/config.toml` to enable or disable service health checks
