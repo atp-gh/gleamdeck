@@ -1,5 +1,6 @@
 import config/load_config
 import data/config.{BuildConfig, MetaConfig, SiteConfig}
+import gleam/option.{None, Some}
 import gleam/string
 
 const complete_config = "
@@ -29,9 +30,107 @@ pub fn complete_config_decodes_test() {
       site: SiteConfig(
         title: "Home Lab",
         subtitle: "Private services",
-        timezone: "Asia/Shanghai",
+        timezone: Some("Asia/Shanghai"),
       ),
     ))
+}
+
+pub fn missing_timezone_decodes_as_none_test() {
+  let result =
+    load_config.decode(
+      "
+[meta]
+title = \"Dashboard\"
+description = \"Services\"
+language = \"en\"
+favicon = \"favicon.ico\"
+
+[site]
+title = \"Home Lab\"
+subtitle = \"Private services\"
+",
+    )
+
+  assert result
+    == Ok(BuildConfig(
+      meta: MetaConfig(
+        title: "Dashboard",
+        description: "Services",
+        language: "en",
+        favicon: "favicon.ico",
+      ),
+      site: SiteConfig(
+        title: "Home Lab",
+        subtitle: "Private services",
+        timezone: None,
+      ),
+    ))
+}
+
+pub fn empty_timezone_decodes_as_none_test() {
+  let result =
+    load_config.decode(
+      "
+[meta]
+title = \"Dashboard\"
+description = \"Services\"
+language = \"en\"
+favicon = \"favicon.ico\"
+
+[site]
+title = \"Home Lab\"
+subtitle = \"Private services\"
+timezone = \"   \"
+",
+    )
+
+  let assert Ok(config) = result
+
+  assert config.site.timezone == None
+}
+
+pub fn timezone_whitespace_is_trimmed_test() {
+  let result =
+    load_config.decode(
+      "
+[meta]
+title = \"Dashboard\"
+description = \"Services\"
+language = \"en\"
+favicon = \"favicon.ico\"
+
+[site]
+title = \"Home Lab\"
+subtitle = \"Private services\"
+timezone = \"  Asia/Shanghai  \"
+",
+    )
+
+  let assert Ok(config) = result
+
+  assert config.site.timezone == Some("Asia/Shanghai")
+}
+
+pub fn timezone_must_be_string_test() {
+  let result =
+    load_config.decode(
+      "
+[meta]
+title = \"Dashboard\"
+description = \"Services\"
+language = \"en\"
+favicon = \"favicon.ico\"
+
+[site]
+title = \"Home Lab\"
+subtitle = \"Private services\"
+timezone = 123
+",
+    )
+
+  let assert Error(reason) = result
+
+  assert string.contains(reason, "Field `timezone` must be a string")
 }
 
 pub fn malformed_toml_returns_parse_error_test() {
@@ -179,6 +278,7 @@ timezone = \"UTC\"
   assert config.meta.description == "Line one\nLine two"
   assert config.site.title == "My \"Gleam\" Deck"
   assert config.site.subtitle == "Services\\Dashboard"
+  assert config.site.timezone == Some("UTC")
 }
 
 pub fn multiline_basic_strings_are_supported_test() {
@@ -203,6 +303,7 @@ timezone = \"UTC\"
   let assert Ok(config) = result
 
   assert config.meta.description == "A dashboard\nfor self-hosted\nservices"
+  assert config.site.timezone == Some("UTC")
 }
 
 pub fn multiline_literal_strings_are_supported_test() {
@@ -226,6 +327,7 @@ timezone = \"UTC\"
   let assert Ok(config) = result
 
   assert config.meta.description == "C:\\Users\\example\nNo escaping required"
+  assert config.site.timezone == Some("UTC")
 }
 
 pub fn comments_are_supported_test() {
@@ -250,5 +352,5 @@ timezone = \"UTC\"
   let assert Ok(config) = result
 
   assert config.meta.title == "Dashboard"
-  assert config.site.timezone == "UTC"
+  assert config.site.timezone == Some("UTC")
 }
