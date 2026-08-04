@@ -49,5 +49,5 @@ Currently, service cards only support a single Emoji or text character as an ico
 Complete the configuration system refactor by introducing explicit optional-field semantics across service and dashboard configuration.
 
 - [x] Refactor `config/services.toml` to model optional service fields with `Option` while keeping essential fields required
-- [ ] Refactor `config/config.toml` to model optional dashboard settings with `Option` and provide sensible fallback behavior
+- [x] Refactor `config/config.toml` to model optional dashboard settings with `Option` and provide sensible fallback behavior
 - [ ] Add `health` Add an optional `health_check` boolean setting to `config/config.toml` to enable or disable service health checks
