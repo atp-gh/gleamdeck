@@ -217,12 +217,21 @@ fn notice(message: String, classes: String) -> Element(Msg) {
   ])
 }
 
+fn effective_timezone(config: app_config.SiteConfig) -> String {
+  case config.timezone {
+    Some(timezone) -> timezone
+    None -> clock.browser_timezone()
+  }
+}
+
 fn header(
   model: Model,
   total: Int,
   online: Int,
   counts: Dict(Status, Int),
 ) -> Element(Msg) {
+  let timezone = effective_timezone(model.config)
+
   html.header([attr.class("header")], [
     html.div([attr.class("brand")], [
       html.div([attr.class("logo")], [html.text("◈")]),
@@ -235,10 +244,10 @@ fn header(
     ]),
     html.div([attr.class("clock")], [
       html.span([attr.class("clock-time")], [
-        html.text(clock.format_time(model.now, model.config.timezone)),
+        html.text(clock.format_time(model.now, timezone)),
       ]),
       html.span([attr.class("clock-date")], [
-        html.text(clock.format_date(model.now, model.config.timezone)),
+        html.text(clock.format_date(model.now, timezone)),
       ]),
     ]),
     html.div([attr.class("stats")], [

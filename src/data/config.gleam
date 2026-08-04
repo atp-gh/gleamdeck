@@ -1,5 +1,7 @@
 //// Build-time and runtime dashboard configuration.
 
+import gleam/option.{type Option, None}
+
 pub type MetaConfig {
   MetaConfig(
     title: String,
@@ -10,7 +12,7 @@ pub type MetaConfig {
 }
 
 pub type SiteConfig {
-  SiteConfig(title: String, subtitle: String, timezone: String)
+  SiteConfig(title: String, subtitle: String, timezone: Option(String))
 }
 
 pub type BuildConfig {
@@ -31,10 +33,12 @@ pub fn default_meta() -> MetaConfig {
 }
 
 /// Runtime configuration used before config.json has loaded.
+///
+/// `None` means the dashboard should use the browser's timezone.
 pub fn default_site() -> SiteConfig {
   SiteConfig(
     title: "Gleam Deck",
     subtitle: "Self-hosted services dashboard",
-    timezone: "UTC",
+    timezone: None,
   )
 }

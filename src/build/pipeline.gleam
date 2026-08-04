@@ -58,9 +58,7 @@ pub fn main() -> Nil {
     <> int.to_string(list.length(services))
     <> " services, "
     <> int.to_string(list.length(css_files))
-    <> " CSS files inlined, timezone "
-    <> config.site.timezone
-    <> ", pure ESM)",
+    <> " CSS files inlined, pure ESM"
   )
 }
 
@@ -325,7 +323,7 @@ fn site_config_json(config: SiteConfig) -> String {
   json.object([
     #("title", json.string(config.title)),
     #("subtitle", json.string(config.subtitle)),
-    #("timezone", json.string(config.timezone)),
+    #("timezone", optional_string_json(config.timezone)),
   ])
   |> json.to_string
   |> string.append("\n")

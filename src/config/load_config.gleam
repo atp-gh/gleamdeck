@@ -5,6 +5,7 @@ import data/config.{
   SiteConfig,
 }
 import gleam/dict.{type Dict}
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import simplifile
@@ -48,7 +49,7 @@ fn decode_meta(table: Dict(String, Toml)) -> Result(MetaConfig, String) {
 fn decode_site(table: Dict(String, Toml)) -> Result(SiteConfig, String) {
   use title <- result.try(required_string(table, "title"))
   use subtitle <- result.try(required_string(table, "subtitle"))
-  use timezone <- result.try(required_string(table, "timezone"))
+  use timezone <- result.try(optional_string(table, "timezone"))
 
   Ok(SiteConfig(title:, subtitle:, timezone:))
 }
@@ -103,6 +104,31 @@ fn required_string(
       )
 
     Error(_) -> Error("Missing required field `" <> field <> "`")
+  }
+}
+
+fn optional_string(
+  table: Dict(String, Toml),
+  field: String,
+) -> Result(Option(String), String) {
+  case dict.get(table, field) {
+    Error(_) -> Ok(None)
+
+    Ok(tom.String(value)) -> {
+      let trimmed = string.trim(value)
+      case trimmed {
+        "" -> Ok(None)
+        _ -> Ok(Some(trimmed))
+      }
+    }
+
+    Ok(value) ->
+      Error(
+        "Field `"
+        <> field
+        <> "` must be a string, but got "
+        <> string.inspect(value),
+      )
   }
 }
 

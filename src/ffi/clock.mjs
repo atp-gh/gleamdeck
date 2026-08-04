@@ -44,3 +44,17 @@ export function format_date(ms, timezone) {
 
   return `${year}-${month}-${day}`;
 }
+
+export function browser_timezone() {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    if (typeof timezone === "string" && timezone.trim() !== "") {
+      return timezone;
+    }
+  } catch {
+    // Intl may be unavailable in unusual browser environments.
+  }
+
+  return "UTC";
+}

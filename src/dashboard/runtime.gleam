@@ -42,7 +42,7 @@ pub fn load_services_json(
 fn config_decoder() -> decode.Decoder(SiteConfig) {
   use title <- decode.field("title", decode.string)
   use subtitle <- decode.field("subtitle", decode.string)
-  use timezone <- decode.field("timezone", decode.string)
+  use timezone <- decode.field("timezone", decode.optional(decode.string))
 
   decode.success(SiteConfig(title:, subtitle:, timezone:))
 }
