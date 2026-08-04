@@ -3,6 +3,7 @@
 import data/services.{type ServiceConfig, ServiceConfig}
 import gleam/dict.{type Dict}
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import simplifile
@@ -88,11 +89,12 @@ fn decode_service(table: Dict(String, Toml)) -> Result(ServiceConfig, String) {
   use id <- result.try(required_string(table, "id"))
   use name <- result.try(required_string(table, "name"))
   use url <- result.try(required_string(table, "url"))
-  use health_url <- result.try(required_string(table, "health_url"))
-  use icon <- result.try(required_string(table, "icon"))
-  use description <- result.try(required_string(table, "description"))
-  use category <- result.try(required_string(table, "category"))
-  use port <- result.try(required_port(table, "port"))
+
+  use health_url <- result.try(optional_string(table, "health_url"))
+  use icon <- result.try(optional_string(table, "icon"))
+  use description <- result.try(optional_string(table, "description"))
+  use category <- result.try(optional_string(table, "category"))
+  use port <- result.try(optional_port(table, "port"))
 
   Ok(ServiceConfig(
     id:,
@@ -129,12 +131,46 @@ fn required_string(
   }
 }
 
-fn required_int(
+fn optional_string(
   table: Dict(String, Toml),
   field: String,
-) -> Result(Int, String) {
+) -> Result(Option(String), String) {
   case dict.get(table, field) {
-    Ok(tom.Int(value)) -> Ok(value)
+    Error(_) -> Ok(None)
+
+    Ok(tom.String(value)) ->
+      case string.trim(value) {
+        "" -> Ok(None)
+        _ -> Ok(Some(value))
+      }
+
+    Ok(value) ->
+      Error(
+        "Field `"
+        <> field
+        <> "` must be a string, but got "
+        <> string.inspect(value),
+      )
+  }
+}
+
+fn optional_port(
+  table: Dict(String, Toml),
+  field: String,
+) -> Result(Option(Int), String) {
+  case dict.get(table, field) {
+    Error(_) -> Ok(None)
+
+    Ok(tom.Int(value)) ->
+      case value >= 0 && value <= 65_535 {
+        True ->
+          case value {
+            0 -> Ok(None)
+            _ -> Ok(Some(value))
+          }
+
+        False -> Error("Field `" <> field <> "` must be between 0 and 65535")
+      }
 
     Ok(value) ->
       Error(
@@ -143,21 +179,6 @@ fn required_int(
         <> "` must be an integer, but got "
         <> string.inspect(value),
       )
-
-    Error(_) -> Error("Missing required field `" <> field <> "`")
-  }
-}
-
-fn required_port(
-  table: Dict(String, Toml),
-  field: String,
-) -> Result(Int, String) {
-  use port <- result.try(required_int(table, field))
-
-  case port >= 0 && port <= 65_535 {
-    True -> Ok(port)
-
-    False -> Error("Field `" <> field <> "` must be between 0 and 65535")
   }
 }
 

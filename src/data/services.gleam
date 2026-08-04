@@ -1,5 +1,7 @@
 //// Domain types and basic operations for services.
 
+import gleam/option.{type Option, None, Some}
+
 pub type Status {
   Checking
   Online
@@ -11,11 +13,11 @@ pub type ServiceConfig {
     id: String,
     name: String,
     url: String,
-    health_url: String,
-    icon: String,
-    description: String,
-    category: String,
-    port: Int,
+    health_url: Option(String),
+    icon: Option(String),
+    description: Option(String),
+    category: Option(String),
+    port: Option(Int),
   )
 }
 
@@ -35,8 +37,12 @@ pub fn url(service: Service) -> String {
   service.config.url
 }
 
+/// Return the configured health URL, falling back to the service URL.
 pub fn health_url(service: Service) -> String {
-  service.config.health_url
+  case service.config.health_url {
+    Some(url) -> url
+    None -> service.config.url
+  }
 }
 
 pub fn with_checking_status(service: Service) -> Service {

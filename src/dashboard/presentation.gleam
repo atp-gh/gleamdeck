@@ -1,4 +1,5 @@
 import data/services.{type Status, Checking, Offline, Online}
+import gleam/option.{type Option, None, Some}
 import gleam/string
 
 const selfhst_icon_base = "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/"
@@ -14,24 +15,26 @@ pub type IconSource {
   TextIcon(String)
 }
 
-pub fn icon_source(value: String) -> IconSource {
-  let icon = string.trim(value)
+pub fn icon_source(value: Option(String)) -> IconSource {
+  case value {
+    None -> TextIcon("?")
 
-  case icon {
-    "" -> TextIcon("?")
+    Some(value) -> {
+      let icon = string.trim(value)
 
-    _ ->
-      case string.split_once(icon, ":") {
-        Ok(#("sh", reference)) -> selfhst_icon(reference)
+      case icon {
+        "" -> TextIcon("?")
 
-        Ok(#("si", reference)) -> simpleicons_icon(reference)
-
-        Ok(#("hl", reference)) -> homelab_icon(reference)
-
-        Ok(#("mdi", reference)) -> mdi_icon(reference)
-
-        _ -> fallback_icon(icon)
+        _ ->
+          case string.split_once(icon, ":") {
+            Ok(#("sh", reference)) -> selfhst_icon(reference)
+            Ok(#("si", reference)) -> simpleicons_icon(reference)
+            Ok(#("hl", reference)) -> homelab_icon(reference)
+            Ok(#("mdi", reference)) -> mdi_icon(reference)
+            _ -> fallback_icon(icon)
+          }
       }
+    }
   }
 }
 

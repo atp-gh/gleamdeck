@@ -8,7 +8,17 @@ import gleam/string
 
 pub fn categories(items: List(Service)) -> List(String) {
   items
-  |> list.map(fn(service) { service.config.category })
+  |> list.filter_map(fn(service) {
+    case service.config.category {
+      Some(category) ->
+        case string.trim(category) {
+          "" -> Error(Nil)
+          _ -> Ok(category)
+        }
+
+      None -> Error(Nil)
+    }
+  })
   |> dedup([])
 }
 
@@ -51,13 +61,14 @@ pub fn filter(
     let matches_text =
       normalized_query == ""
       || contains_case_insensitive(config.name, normalized_query)
-      || contains_case_insensitive(config.description, normalized_query)
-      || contains_case_insensitive(config.category, normalized_query)
+      || optional_contains_case_insensitive(config.description, normalized_query)
+      || optional_contains_case_insensitive(config.category, normalized_query)
       || contains_case_insensitive(config.url, normalized_query)
 
-    let matches_category = case active_category {
-      None -> True
-      Some(category) -> config.category == category
+    let matches_category = case active_category, config.category {
+      None, _ -> True
+      Some(selected), Some(category) -> category == selected
+      Some(_), None -> False
     }
 
     matches_text && matches_category
@@ -68,4 +79,14 @@ fn contains_case_insensitive(value: String, query: String) -> Bool {
   value
   |> string.lowercase
   |> string.contains(query)
+}
+
+fn optional_contains_case_insensitive(
+  value: Option(String),
+  query: String,
+) -> Bool {
+  case value {
+    Some(value) -> contains_case_insensitive(value, query)
+    None -> False
+  }
 }

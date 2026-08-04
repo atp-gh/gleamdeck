@@ -117,3 +117,8 @@ icon = "sh:adguard-home"
 description = "DNS server with ad and tracker blocking."
 category = "Infrastructure"
 port = 3000
+
+[[service]]
+id = "test"
+name = "Test minimum configuration"
+url = "https://github.com/atp-gh/gleamdeck"

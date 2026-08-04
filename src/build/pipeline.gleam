@@ -21,6 +21,7 @@ import gleam/int
 import gleam/io
 import gleam/json
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/string
 import simplifile
 
@@ -342,12 +343,26 @@ fn service_json(service: ServiceConfig) -> json.Json {
     #("id", json.string(service.id)),
     #("name", json.string(service.name)),
     #("url", json.string(service.url)),
-    #("health_url", json.string(service.health_url)),
-    #("icon", json.string(service.icon)),
-    #("description", json.string(service.description)),
-    #("category", json.string(service.category)),
-    #("port", json.int(service.port)),
+    #("health_url", optional_string_json(service.health_url)),
+    #("icon", optional_string_json(service.icon)),
+    #("description", optional_string_json(service.description)),
+    #("category", optional_string_json(service.category)),
+    #("port", optional_int_json(service.port)),
   ])
+}
+
+fn optional_string_json(value: Option(String)) -> json.Json {
+  case value {
+    Some(value) -> json.string(value)
+    None -> json.null()
+  }
+}
+
+fn optional_int_json(value: Option(Int)) -> json.Json {
+  case value {
+    Some(value) -> json.int(value)
+    None -> json.null()
+  }
 }
 
 /// Discover every CSS file under `src/css`.

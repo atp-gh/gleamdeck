@@ -55,11 +55,11 @@ fn service_decoder() -> decode.Decoder(ServiceConfig) {
   use id <- decode.field("id", decode.string)
   use name <- decode.field("name", decode.string)
   use url <- decode.field("url", decode.string)
-  use health_url <- decode.field("health_url", decode.string)
-  use icon <- decode.field("icon", decode.string)
-  use description <- decode.field("description", decode.string)
-  use category <- decode.field("category", decode.string)
-  use port <- decode.field("port", decode.int)
+  use health_url <- decode.field("health_url", decode.optional(decode.string))
+  use icon <- decode.field("icon", decode.optional(decode.string))
+  use description <- decode.field("description", decode.optional(decode.string))
+  use category <- decode.field("category", decode.optional(decode.string))
+  use port <- decode.field("port", decode.optional(decode.int))
 
   decode.success(ServiceConfig(
     id:,

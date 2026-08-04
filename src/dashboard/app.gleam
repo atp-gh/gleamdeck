@@ -302,7 +302,34 @@ fn pill(active: Bool, label: String, msg: Msg) -> Element(Msg) {
   html.button([attr.class(classes), event.on_click(msg)], [html.text(label)])
 }
 
-fn render_service_icon(icon: String, service_name: String) -> Element(Msg) {
+fn render_description(description: Option(String)) -> Element(Msg) {
+  case description {
+    None -> html.text("")
+
+    Some(value) ->
+      html.p([attr.class("card-desc")], [
+        html.text(value),
+      ])
+  }
+}
+
+fn render_port(port: Option(Int)) -> Element(Msg) {
+  case port {
+    None -> html.text("")
+
+    Some(0) -> html.text("")
+
+    Some(value) ->
+      html.span([attr.class("card-port")], [
+        html.text(":" <> int.to_string(value)),
+      ])
+  }
+}
+
+fn render_service_icon(
+  icon: Option(String),
+  service_name: String,
+) -> Element(Msg) {
   case presentation.icon_source(icon) {
     presentation.ImageIcon(url) ->
       html.span([attr.class("card-icon")], [
@@ -349,19 +376,13 @@ fn render_card(item: Service, index: Int) -> Element(Msg) {
       ]),
       html.div([attr.class("card-body")], [
         html.h3([attr.class("card-name")], [html.text(config.name)]),
-        html.p([attr.class("card-desc")], [html.text(config.description)]),
+        render_description(config.description),
       ]),
       html.div([attr.class("card-foot")], [
         html.span([attr.class("card-host")], [
           html.text(presentation.host_of(config.url)),
         ]),
-        case config.port {
-          0 -> html.span([], [])
-          port ->
-            html.span([attr.class("card-port")], [
-              html.text(":" <> int.to_string(port)),
-            ])
-        },
+        render_port(config.port),
       ]),
     ],
   )
