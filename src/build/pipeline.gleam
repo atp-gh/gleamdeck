@@ -30,6 +30,10 @@ const static_dir = "static"
 
 const css_dir = "src/css"
 
+const css_entry_path = "src/css/.gleamdeck-entry.css"
+
+const bundled_css_path = "dist/.gleamdeck-bundle.css"
+
 pub fn main() -> Nil {
   let config = load_build_config()
   let services = load_services.load()
@@ -37,13 +41,14 @@ pub fn main() -> Nil {
 
   reset_dist()
   bundle_spa()
+  let css = bundle_css(css_files)
   copy_directory_contents(static_dir, dist_dir)
 
   write_file(dist_dir <> "/config.json", site_config_json(config.site))
 
   write_file(dist_dir <> "/services.json", services_json(services))
 
-  write_file(dist_dir <> "/index.html", index_html(config.meta, css_files))
+  write_file(dist_dir <> "/index.html", index_html(config.meta, css))
 
   io.println(
     "✓ built "
@@ -98,6 +103,69 @@ fn bundle_spa() -> Nil {
         exit_code -> {
           let message =
             "Could not bundle SPA with Bun. Command exited with code "
+            <> int.to_string(exit_code)
+            <> ": "
+            <> command
+
+          panic as message
+        }
+      }
+    }
+  }
+}
+
+/// Bundle, minify, and return all discovered CSS.
+///
+/// A temporary entry file is created inside `src/css`, allowing every import
+/// path to remain relative to the original CSS directory. Bun parses and
+/// minifies the complete stylesheet while preserving the deterministic order
+/// supplied by `discover_css_files`.
+fn bundle_css(css_files: List(String)) -> String {
+  case css_files {
+    [] -> ""
+
+    _ -> {
+      let entry_css =
+        css_files
+        |> list.map(css_import_rule)
+        |> string.join("")
+
+      write_file(css_entry_path, entry_css)
+
+      let command =
+        "bun build "
+        <> css_entry_path
+        <> " --outfile "
+        <> bundled_css_path
+        <> " --target browser"
+        <> " --minify"
+        <> " --sourcemap=none"
+
+      case run_command(command) {
+        0 -> {
+          let bundled_css = case simplifile.read(from: bundled_css_path) {
+            Ok(css) ->
+              css
+              |> sanitize_style_text
+              |> string.trim
+
+            Error(error) ->
+              panic_file_error(
+                "Could not read bundled CSS from " <> bundled_css_path,
+                error,
+              )
+          }
+
+          delete_temporary_css_files()
+
+          bundled_css
+        }
+
+        exit_code -> {
+          delete_temporary_css_files()
+
+          let message =
+            "Could not bundle CSS with Bun. Command exited with code "
             <> int.to_string(exit_code)
             <> ": "
             <> command
@@ -292,7 +360,9 @@ fn discover_css_files() -> List(String) {
       case simplifile.get_files(css_dir) {
         Ok(files) ->
           files
-          |> list.filter(fn(path) { string.ends_with(path, ".css") })
+          |> list.filter(fn(path) {
+            string.ends_with(path, ".css") && path != css_entry_path
+          })
           |> list.sort(fn(first, second) { string.compare(first, second) })
 
         Error(error) ->
@@ -309,24 +379,26 @@ fn discover_css_files() -> List(String) {
   }
 }
 
-/// Read, minify, sanitize, and concatenate discovered CSS files.
-///
-/// CSS paths are supplied by `discover_css_files`, which ensures a stable
-/// alphabetical cascade order.
-fn inline_css(css_files: List(String)) -> String {
-  css_files
-  |> list.map(fn(path) {
-    case simplifile.read(from: path) {
-      Ok(css) ->
-        css
-        |> minify_css
-        |> sanitize_style_text
+fn css_import_rule(path: String) -> String {
+  let relative_path = remove_directory_prefix(path, css_dir)
 
-      Error(error) ->
-        panic_file_error("Could not read CSS file " <> path, error)
-    }
-  })
-  |> string.join("")
+  let quoted_path =
+    json.string("./" <> relative_path)
+    |> json.to_string
+
+  "@import " <> quoted_path <> ";\n"
+}
+
+fn delete_temporary_css_files() -> Nil {
+  case simplifile.delete_all([css_entry_path, bundled_css_path]) {
+    Ok(_) -> Nil
+
+    Error(error) ->
+      io.println(
+        "Warning: could not remove temporary CSS build files: "
+        <> simplifile.describe_error(error),
+      )
+  }
 }
 
 /// Prevent CSS content from terminating the generated inline style element.
@@ -335,133 +407,7 @@ fn sanitize_style_text(css: String) -> String {
   |> string.replace("</style", "<\\/style")
 }
 
-type CssScanState {
-  CssOutside
-  CssComment
-  CssString(quote: String, escaped: Bool)
-}
-
-/// Minify CSS while preserving quoted strings.
-fn minify_css(css: String) -> String {
-  css
-  |> strip_css_comments
-  |> collapse_css_whitespace
-  |> trim_css_spaces_around_tokens
-  |> string.trim
-}
-
-fn strip_css_comments(css: String) -> String {
-  css
-  |> string.to_graphemes
-  |> strip_css_comments_loop(CssOutside, [])
-  |> list.reverse
-  |> string.join("")
-}
-
-fn strip_css_comments_loop(
-  chars: List(String),
-  state: CssScanState,
-  acc: List(String),
-) -> List(String) {
-  case chars {
-    [] -> acc
-
-    [char, ..rest] ->
-      case state {
-        CssOutside ->
-          case char {
-            "/" ->
-              case rest {
-                ["*", ..tail] -> strip_css_comments_loop(tail, CssComment, acc)
-
-                _ -> strip_css_comments_loop(rest, CssOutside, [char, ..acc])
-              }
-
-            "\"" ->
-              strip_css_comments_loop(rest, CssString("\"", False), [
-                char,
-                ..acc
-              ])
-
-            "'" ->
-              strip_css_comments_loop(rest, CssString("'", False), [char, ..acc])
-
-            _ -> strip_css_comments_loop(rest, CssOutside, [char, ..acc])
-          }
-
-        CssComment ->
-          case char {
-            "*" ->
-              case rest {
-                ["/", ..tail] -> strip_css_comments_loop(tail, CssOutside, acc)
-
-                _ -> strip_css_comments_loop(rest, CssComment, acc)
-              }
-
-            _ -> strip_css_comments_loop(rest, CssComment, acc)
-          }
-
-        CssString(quote, escaped) -> {
-          let next_state = case escaped {
-            True -> CssString(quote, False)
-
-            False ->
-              case char {
-                "\\" -> CssString(quote, True)
-
-                _ ->
-                  case char == quote {
-                    True -> CssOutside
-                    False -> CssString(quote, False)
-                  }
-              }
-          }
-
-          strip_css_comments_loop(rest, next_state, [char, ..acc])
-        }
-      }
-  }
-}
-
-fn collapse_css_whitespace(css: String) -> String {
-  css
-  |> string.replace("\r\n", "\n")
-  |> string.replace("\r", "\n")
-  |> string.replace("\n", " ")
-  |> string.replace("\t", " ")
-  |> collapse_repeated_spaces
-}
-
-fn collapse_repeated_spaces(css: String) -> String {
-  let compacted = string.replace(css, "  ", " ")
-
-  case compacted == css {
-    True -> compacted
-
-    False -> collapse_repeated_spaces(compacted)
-  }
-}
-
-fn trim_css_spaces_around_tokens(css: String) -> String {
-  css
-  |> string.replace(" {", "{")
-  |> string.replace("{ ", "{")
-  |> string.replace(" }", "}")
-  |> string.replace("} ", "}")
-  |> string.replace(" :", ":")
-  |> string.replace(": ", ":")
-  |> string.replace(" ;", ";")
-  |> string.replace("; ", ";")
-  |> string.replace(" ,", ",")
-  |> string.replace(", ", ",")
-  |> string.replace(" >", ">")
-  |> string.replace("> ", ">")
-  |> string.replace("( ", "(")
-  |> string.replace(" )", ")")
-}
-
-fn index_html(meta: MetaConfig, css_files: List(String)) -> String {
-  let css = inline_css(css_files)
+fn index_html(meta: MetaConfig, css: String) -> String {
   "<!doctype html>"
   <> "<html lang=\""
   <> meta.language
