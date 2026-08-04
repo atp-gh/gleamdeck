@@ -177,3 +177,202 @@ name = \"Gitea\"
 
   assert string.contains(reason, "Invalid [[service]] entry at index 1")
 }
+
+pub fn multiline_service_description_decodes_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+health_url = \"https://grafana.example.com/api/health\"
+icon = \"sh:grafana\"
+description = \"\"\"Metrics dashboards
+and observability
+for the home lab\"\"\"
+category = \"Monitoring\"
+port = 3000
+",
+    )
+
+  let assert Ok([service]) = result
+
+  assert service.description
+    == "Metrics dashboards\nand observability\nfor the home lab"
+}
+
+pub fn escaped_service_fields_decode_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"example\"
+name = \"My \\\"Service\\\"\"
+url = \"https://example.com/path?query=hello%20world\"
+health_url = \"https://example.com/health\"
+icon = \"icons/example.png\"
+description = \"Line one\\nLine two\"
+category = \"Home\\\\Lab\"
+port = 443
+",
+    )
+
+  let assert Ok([service]) = result
+
+  assert service.name == "My \"Service\""
+  assert service.description == "Line one\nLine two"
+  assert service.category == "Home\\Lab"
+}
+
+pub fn unicode_service_fields_decode_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"music\"
+name = \"音乐服务\"
+url = \"https://music.example.com\"
+health_url = \"https://music.example.com/health\"
+icon = \"🎵\"
+description = \"自托管音乐流媒体服务\"
+category = \"媒体\"
+port = 4533
+",
+    )
+
+  let assert Ok([service]) = result
+
+  assert service.name == "音乐服务"
+  assert service.icon == "🎵"
+  assert service.description == "自托管音乐流媒体服务"
+  assert service.category == "媒体"
+}
+
+pub fn empty_service_id_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"   \"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+health_url = \"https://grafana.example.com/health\"
+icon = \"sh:grafana\"
+description = \"Metrics dashboard\"
+category = \"Monitoring\"
+port = 3000
+",
+    )
+
+  assert result
+    == Error(
+      "Invalid [[service]] entry at index 0: Field `id` must not be empty",
+    )
+}
+
+pub fn empty_icon_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+health_url = \"https://grafana.example.com/health\"
+icon = \"\"
+description = \"Metrics dashboard\"
+category = \"Monitoring\"
+port = 3000
+",
+    )
+
+  assert result
+    == Error(
+      "Invalid [[service]] entry at index 0: Field `icon` must not be empty",
+    )
+}
+
+pub fn negative_port_returns_validation_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+health_url = \"https://grafana.example.com/health\"
+icon = \"sh:grafana\"
+description = \"Metrics dashboard\"
+category = \"Monitoring\"
+port = -1
+",
+    )
+
+  let assert Error(reason) = result
+
+  assert string.contains(reason, "Field `port` must be between 0 and 65535")
+}
+
+pub fn port_above_65535_returns_validation_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+health_url = \"https://grafana.example.com/health\"
+icon = \"sh:grafana\"
+description = \"Metrics dashboard\"
+category = \"Monitoring\"
+port = 65536
+",
+    )
+
+  let assert Error(reason) = result
+
+  assert string.contains(reason, "Field `port` must be between 0 and 65535")
+}
+
+pub fn zero_port_is_allowed_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"external\"
+name = \"External Service\"
+url = \"https://example.com\"
+health_url = \"https://example.com\"
+icon = \"🌐\"
+description = \"External service without an explicit port\"
+category = \"External\"
+port = 0
+",
+    )
+
+  let assert Ok([service]) = result
+
+  assert service.port == 0
+}
+
+pub fn maximum_port_is_allowed_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"example\"
+name = \"Example\"
+url = \"https://example.com\"
+health_url = \"https://example.com/health\"
+icon = \"🌐\"
+description = \"Example service\"
+category = \"Test\"
+port = 65535
+",
+    )
+
+  let assert Ok([service]) = result
+
+  assert service.port == 65535
+}
