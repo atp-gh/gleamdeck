@@ -3,6 +3,12 @@ import gleam/string
 
 const selfhst_icon_base = "https://cdn.jsdelivr.net/gh/selfhst/icons@main/webp/"
 
+const simpleicons_icon_base = "https://cdn.simpleicons.org/"
+
+const homelab_icon_base = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/"
+
+const mdi_icon_base = "https://cdn.jsdelivr.net/npm/@mdi/svg@7.4.47/svg/"
+
 pub type IconSource {
   ImageIcon(String)
   TextIcon(String)
@@ -15,32 +21,71 @@ pub fn icon_source(value: String) -> IconSource {
     "" -> TextIcon("?")
 
     _ ->
-      case string.starts_with(icon, "sh:") {
-        True -> selfhst_icon(icon)
+      case string.split_once(icon, ":") {
+        Ok(#("sh", reference)) -> selfhst_icon(reference)
 
-        False ->
-          case is_remote_icon(icon) {
-            True -> ImageIcon(icon)
+        Ok(#("si", reference)) -> simpleicons_icon(reference)
 
-            False ->
-              case is_local_icon(icon) {
-                True -> ImageIcon(local_icon_url(icon))
-                False -> TextIcon(icon)
-              }
-          }
+        Ok(#("hl", reference)) -> homelab_icon(reference)
+
+        Ok(#("mdi", reference)) -> mdi_icon(reference)
+
+        _ -> fallback_icon(icon)
       }
+  }
+}
+
+fn fallback_icon(icon: String) -> IconSource {
+  case is_remote_icon(icon), is_local_icon(icon) {
+    True, _ -> ImageIcon(icon)
+
+    False, True -> ImageIcon(local_icon_url(icon))
+
+    False, False -> TextIcon(icon)
   }
 }
 
 fn selfhst_icon(icon: String) -> IconSource {
   let reference =
     icon
-    |> string.drop_start(3)
     |> string.trim
 
   case reference {
     "" -> TextIcon("?")
     _ -> ImageIcon(selfhst_icon_base <> reference <> ".webp")
+  }
+}
+
+fn simpleicons_icon(icon: String) -> IconSource {
+  let reference =
+    icon
+    |> string.trim
+
+  case reference {
+    "" -> TextIcon("?")
+    _ -> ImageIcon(simpleicons_icon_base <> reference)
+  }
+}
+
+fn homelab_icon(icon: String) -> IconSource {
+  let reference =
+    icon
+    |> string.trim
+
+  case reference {
+    "" -> TextIcon("?")
+    _ -> ImageIcon(homelab_icon_base <> reference <> ".webp")
+  }
+}
+
+fn mdi_icon(icon: String) -> IconSource {
+  let reference =
+    icon
+    |> string.trim
+
+  case reference {
+    "" -> TextIcon("?")
+    _ -> ImageIcon(mdi_icon_base <> reference <> ".svg")
   }
 }
 
