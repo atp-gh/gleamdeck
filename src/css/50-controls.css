@@ -1,15 +1,15 @@
 .controls {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(220px, 420px) minmax(0, 1fr) auto;
     align-items: center;
     gap: 14px;
-    flex-wrap: wrap;
+    min-width: 0;
 }
 
 .search {
     position: relative;
-    flex: 1;
-    min-width: 220px;
-    max-width: 420px;
+    width: 100%;
+    min-width: 0;
 }
 
 .search-icon {
@@ -18,10 +18,12 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--faint);
+    pointer-events: none;
 }
 
 .search-input {
     width: 100%;
+    min-width: 0;
     padding: 11px 16px 11px 40px;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -37,16 +39,22 @@
 .pills {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    padding-block: 3px;
 }
 
 .pill,
 .refresh {
+    flex: 0 0 auto;
     padding: 9px 16px;
     border: 1px solid var(--border);
     border-radius: 999px;
     color: var(--dim);
     background: #ffffff08;
+    white-space: nowrap;
 }
 
 .pill.active {
@@ -57,7 +65,7 @@
 }
 
 .refresh {
-    margin-left: auto;
+    margin-left: 0;
     border-radius: 12px;
     color: var(--text);
     background: var(--panel2);

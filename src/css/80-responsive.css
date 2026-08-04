@@ -1,40 +1,163 @@
-@media (max-width: 860px) {
+/* Small desktops and landscape tablets */
+@media (max-width: 1100px) {
+    .header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "brand clock"
+            "stats stats";
+    }
+
+    .clock {
+        border-inline-start: 1px solid var(--border);
+        border-inline-end: 0;
+    }
+
+    .stats {
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+    }
+
+    .controls {
+        grid-template-columns: minmax(240px, 1fr) auto;
+        grid-template-areas:
+            "search refresh"
+            "pills pills";
+    }
+
+    .search {
+        grid-area: search;
+        max-width: none;
+    }
+
+    .pills {
+        grid-area: pills;
+    }
+
+    .refresh {
+        grid-area: refresh;
+    }
+}
+
+/* Portrait tablets and large-screen phones */
+@media (max-width: 760px) {
     .header {
         grid-template-columns: 1fr;
+        grid-template-areas:
+            "brand"
+            "clock"
+            "stats";
     }
 
     .clock {
         align-items: flex-start;
+        padding-inline: 0;
+        padding-block: 14px;
         border-inline: 0;
         border-block: 1px solid var(--border);
     }
 
     .stats {
-        justify-content: space-between;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding-top: 0;
+        border-top: 0;
     }
 
-    .stat {
-        flex: 1;
-        min-width: 0;
+    .controls {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "search"
+            "pills"
+            "refresh";
     }
 
     .refresh {
         width: 100%;
-        margin-left: 0;
-    }
-}
-
-@media (max-width: 560px) {
-    .wrap {
-        padding: 20px 16px 36px;
-        gap: 20px;
     }
 
     .grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
     }
 }
 
+/* Standard mobile phones */
+@media (max-width: 520px) {
+    .wrap {
+        padding: 16px 14px 32px;
+        gap: 18px;
+    }
+
+    .header {
+        padding: 16px;
+        border-radius: 15px;
+    }
+
+    .brand {
+        align-items: flex-start;
+    }
+
+    .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+    }
+
+    .title {
+        white-space: normal;
+        line-height: 1.25;
+    }
+
+    .subtitle {
+        margin-top: 3px;
+        white-space: normal;
+        line-height: 1.4;
+    }
+
+    .stats {
+        gap: 8px;
+    }
+
+    .stat {
+        padding: 10px 6px;
+    }
+
+    .stat-label {
+        letter-spacing: 0.06em;
+    }
+
+    .grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .card {
+        min-height: 190px;
+        padding: 17px;
+        border-radius: 15px;
+    }
+
+    .pills {
+        margin-inline: -14px;
+        padding-inline: 14px;
+    }
+}
+
+/* Extra-narrow screens */
+@media (max-width: 360px) {
+    .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .clock-time {
+        font-size: 18px;
+    }
+
+    .card-status {
+        padding-inline: 8px;
+        letter-spacing: 0.06em;
+    }
+}
+
+/* Respect the user's reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
     .blob,
     .card {
@@ -45,5 +168,19 @@
         opacity: 1;
         transform: none;
         transition: none;
+    }
+
+    .card-glow {
+        transition: none;
+    }
+}
+
+/* Provide a more opaque background when backdrop-filter is unsupported */
+@supports not (backdrop-filter: blur(18px)) {
+    .header,
+    .card,
+    .notice,
+    .search-input {
+        background: rgba(18, 26, 46, 0.94);
     }
 }
