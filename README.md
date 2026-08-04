@@ -109,11 +109,13 @@ id = "jellyfin"
 name = "Jellyfin"
 url = "https://jellyfin.example.com"
 health_url = "https://jellyfin.example.com"
-icon = "🎬"
+icon = "sh:jellyfin"
 description = "Streaming media server for movies, shows and music."
 category = "Media"
 port = 8096
 ```
+
+> The `sh:` prefix uses [selfh.st Icons](https://selfh.st/icons/) as the icon provider. See [icons config](docs/configuration.md#icons) for all supported icon formats and providers.
 
 ### 4. Configure site and metadata
 

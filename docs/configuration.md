@@ -90,7 +90,7 @@ id = "jellyfin"
 name = "Jellyfin"
 url = "https://jellyfin.example.com"
 health_url = "https://jellyfin.example.com"
-icon = "🎬"
+icon = "sh:jellyfin"
 description = "Streaming media server for movies, shows and music."
 category = "Media"
 port = 8096
@@ -98,16 +98,70 @@ port = 8096
 
 ### Service fields
 
-| Field         | Type    | Required | Description                                                    |
-| ------------- | ------- | -------- | -------------------------------------------------------------- |
-| `id`          | String  | Yes      | Stable identifier used by the dashboard; must be unique        |
-| `name`        | String  | Yes      | Display name shown on the card                                 |
-| `url`         | String  | Yes      | URL the card links to (opened in a new tab)                    |
-| `health_url`  | String  | Yes      | URL fetched to determine reachability (uses `no-cors`)         |
-| `icon`        | String  | Yes      | Icon shown on the card; typically an emoji or single character |
-| `description` | String  | Yes      | Short description shown beneath the name                       |
-| `category`    | String  | Yes      | Used for category pills and filtering                          |
-| `port`        | Integer | Yes      | Service port displayed on the card; use `0` to hide            |
+| Field         | Type    | Required | Description                                                                                      |
+| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `id`          | String  | Yes      | Stable identifier used by the dashboard; must be unique                                          |
+| `name`        | String  | Yes      | Display name shown on the card                                                                   |
+| `url`         | String  | Yes      | URL the card links to (opened in a new tab)                                                      |
+| `health_url`  | String  | Yes      | URL fetched to determine reachability (uses `no-cors`)                                           |
+| `icon`        | String  | Yes      | Icon shown on the card; supports text, local images, remote images, and icon provider references |
+| `description` | String  | Yes      | Short description shown beneath the name                                                         |
+| `category`    | String  | Yes      | Used for category pills and filtering                                                            |
+| `port`        | Integer | Yes      | Service port displayed on the card; use `0` to hide                                              |
+
+### Icons
+
+The `icon` field supports:
+
+- Emoji or text
+- Local image paths
+- Remote image URLs
+- Icon providers
+
+#### Emoji or text
+
+```toml
+icon = "🎬"
+icon = "Hi"
+```
+
+#### Local image paths
+
+```toml
+icon = "icons/jellyfin.webp"
+# or
+icon = "static/icons/jellyfin.webp"
+```
+
+Place the corresponding file in `static/icons/`. During the build, it will be available as:
+
+```text
+dist/icons/jellyfin.webp
+```
+
+#### Remote image URLs
+
+```toml
+icon = "https://example.com/icon.svg"
+```
+
+#### Icon providers
+
+GleamDeck supports four icon providers:
+
+- `sh:` — https://selfh.st/icons/
+- `si:` — [Simple Icons](https://simpleicons.org/)
+- `hl:` — https://github.com/homarr-labs/dashboard-icons
+- `mdi:` — [Material Design Icons](https://pictogrammers.com/library/mdi/)
+
+Examples:
+
+```toml
+icon = "sh:jellyfin"
+icon = "si:github"
+icon = "hl:home-assistant"
+icon = "mdi:server"
+```
 
 ### Categories
 
