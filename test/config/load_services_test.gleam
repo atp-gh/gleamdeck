@@ -1,5 +1,6 @@
 import config/load_services
 import data/services.{ServiceConfig}
+import gleam/option.{None, Some}
 import gleam/string
 
 const valid_config = "
@@ -32,21 +33,46 @@ pub fn valid_services_config_decodes_test() {
       id: "grafana",
       name: "Grafana",
       url: "https://grafana.example.com",
-      health_url: "https://grafana.example.com/api/health",
-      icon: "📊",
-      description: "Metrics dashboard",
-      category: "Monitoring",
-      port: 3000,
+      health_url: Some("https://grafana.example.com/api/health"),
+      icon: Some("📊"),
+      description: Some("Metrics dashboard"),
+      category: Some("Monitoring"),
+      port: Some(3000),
     ),
     ServiceConfig(
       id: "gitea",
       name: "Gitea",
       url: "https://git.example.com",
-      health_url: "https://git.example.com/api/healthz",
-      icon: "◈",
-      description: "Git hosting",
-      category: "Development",
-      port: 443,
+      health_url: Some("https://git.example.com/api/healthz"),
+      icon: Some("◈"),
+      description: Some("Git hosting"),
+      category: Some("Development"),
+      port: Some(443),
+    ),
+  ]) = result
+}
+
+pub fn minimal_services_config_decodes_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"adguard\"
+name = \"AdGuard Home\"
+url = \"https://adguard.com/en/welcome.html\"
+",
+    )
+
+  let assert Ok([
+    ServiceConfig(
+      id: "adguard",
+      name: "AdGuard Home",
+      url: "https://adguard.com/en/welcome.html",
+      health_url: None,
+      icon: None,
+      description: None,
+      category: None,
+      port: None,
     ),
   ]) = result
 }
@@ -97,21 +123,48 @@ pub fn missing_required_field_returns_error_test() {
 [[service]]
 id = \"grafana\"
 name = \"Grafana\"
-url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/api/health\"
-icon = \"📊\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
 ",
     )
 
   assert result
     == Error(
-      "Invalid [[service]] entry at index 0: Missing required field `port`",
+      "Invalid [[service]] entry at index 0: Missing required field `url`",
     )
 }
 
-pub fn wrong_string_field_type_returns_error_test() {
+pub fn missing_id_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+",
+    )
+
+  assert result
+    == Error(
+      "Invalid [[service]] entry at index 0: Missing required field `id`",
+    )
+}
+
+pub fn missing_name_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+url = \"https://grafana.example.com\"
+",
+    )
+
+  assert result
+    == Error(
+      "Invalid [[service]] entry at index 0: Missing required field `name`",
+    )
+}
+
+pub fn wrong_required_string_field_type_returns_error_test() {
   let result =
     load_services.decode(
       "
@@ -119,17 +172,29 @@ pub fn wrong_string_field_type_returns_error_test() {
 id = 123
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/api/health\"
-icon = \"📊\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
-port = 3000
 ",
     )
 
   let assert Error(reason) = result
 
   assert string.contains(reason, "Field `id` must be a string")
+}
+
+pub fn wrong_optional_string_field_type_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+icon = 123
+",
+    )
+
+  let assert Error(reason) = result
+
+  assert string.contains(reason, "Field `icon` must be a string")
 }
 
 pub fn wrong_port_type_returns_error_test() {
@@ -140,10 +205,6 @@ pub fn wrong_port_type_returns_error_test() {
 id = \"grafana\"
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/api/health\"
-icon = \"📊\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
 port = \"3000\"
 ",
     )
@@ -161,11 +222,6 @@ pub fn invalid_second_entry_reports_correct_index_test() {
 id = \"grafana\"
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/api/health\"
-icon = \"📊\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
-port = 3000
 
 [[service]]
 id = \"gitea\"
@@ -176,6 +232,7 @@ name = \"Gitea\"
   let assert Error(reason) = result
 
   assert string.contains(reason, "Invalid [[service]] entry at index 1")
+  assert string.contains(reason, "Missing required field `url`")
 }
 
 pub fn multiline_service_description_decodes_test() {
@@ -199,7 +256,7 @@ port = 3000
   let assert Ok([service]) = result
 
   assert service.description
-    == "Metrics dashboards\nand observability\nfor the home lab"
+    == Some("Metrics dashboards\nand observability\nfor the home lab")
 }
 
 pub fn escaped_service_fields_decode_test() {
@@ -221,8 +278,8 @@ port = 443
   let assert Ok([service]) = result
 
   assert service.name == "My \"Service\""
-  assert service.description == "Line one\nLine two"
-  assert service.category == "Home\\Lab"
+  assert service.description == Some("Line one\nLine two")
+  assert service.category == Some("Home\\Lab")
 }
 
 pub fn unicode_service_fields_decode_test() {
@@ -244,9 +301,9 @@ port = 4533
   let assert Ok([service]) = result
 
   assert service.name == "音乐服务"
-  assert service.icon == "🎵"
-  assert service.description == "自托管音乐流媒体服务"
-  assert service.category == "媒体"
+  assert service.icon == Some("🎵")
+  assert service.description == Some("自托管音乐流媒体服务")
+  assert service.category == Some("媒体")
 }
 
 pub fn empty_service_id_returns_error_test() {
@@ -257,11 +314,6 @@ pub fn empty_service_id_returns_error_test() {
 id = \"   \"
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/health\"
-icon = \"sh:grafana\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
-port = 3000
 ",
     )
 
@@ -271,7 +323,41 @@ port = 3000
     )
 }
 
-pub fn empty_icon_returns_error_test() {
+pub fn empty_service_name_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"\"
+url = \"https://grafana.example.com\"
+",
+    )
+
+  assert result
+    == Error(
+      "Invalid [[service]] entry at index 0: Field `name` must not be empty",
+    )
+}
+
+pub fn empty_service_url_returns_error_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"   \"
+",
+    )
+
+  assert result
+    == Error(
+      "Invalid [[service]] entry at index 0: Field `url` must not be empty",
+    )
+}
+
+pub fn empty_optional_fields_decode_as_none_test() {
   let result =
     load_services.decode(
       "
@@ -279,18 +365,43 @@ pub fn empty_icon_returns_error_test() {
 id = \"grafana\"
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/health\"
+health_url = \"\"
 icon = \"\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
-port = 3000
+description = \"\"
+category = \"\"
 ",
     )
 
-  assert result
-    == Error(
-      "Invalid [[service]] entry at index 0: Field `icon` must not be empty",
+  let assert Ok([service]) = result
+
+  assert service.health_url == None
+  assert service.icon == None
+  assert service.description == None
+  assert service.category == None
+  assert service.port == None
+}
+
+pub fn whitespace_optional_fields_decode_as_none_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"grafana\"
+name = \"Grafana\"
+url = \"https://grafana.example.com\"
+health_url = \"   \"
+icon = \"   \"
+description = \"   \"
+category = \"   \"
+",
     )
+
+  let assert Ok([service]) = result
+
+  assert service.health_url == None
+  assert service.icon == None
+  assert service.description == None
+  assert service.category == None
 }
 
 pub fn negative_port_returns_validation_error_test() {
@@ -301,10 +412,6 @@ pub fn negative_port_returns_validation_error_test() {
 id = \"grafana\"
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/health\"
-icon = \"sh:grafana\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
 port = -1
 ",
     )
@@ -322,10 +429,6 @@ pub fn port_above_65535_returns_validation_error_test() {
 id = \"grafana\"
 name = \"Grafana\"
 url = \"https://grafana.example.com\"
-health_url = \"https://grafana.example.com/health\"
-icon = \"sh:grafana\"
-description = \"Metrics dashboard\"
-category = \"Monitoring\"
 port = 65536
 ",
     )
@@ -335,7 +438,7 @@ port = 65536
   assert string.contains(reason, "Field `port` must be between 0 and 65535")
 }
 
-pub fn zero_port_is_allowed_test() {
+pub fn omitted_port_decodes_as_none_test() {
   let result =
     load_services.decode(
       "
@@ -343,17 +446,29 @@ pub fn zero_port_is_allowed_test() {
 id = \"external\"
 name = \"External Service\"
 url = \"https://example.com\"
-health_url = \"https://example.com\"
-icon = \"🌐\"
-description = \"External service without an explicit port\"
-category = \"External\"
+",
+    )
+
+  let assert Ok([service]) = result
+
+  assert service.port == None
+}
+
+pub fn zero_port_decodes_as_none_test() {
+  let result =
+    load_services.decode(
+      "
+[[service]]
+id = \"external\"
+name = \"External Service\"
+url = \"https://example.com\"
 port = 0
 ",
     )
 
   let assert Ok([service]) = result
 
-  assert service.port == 0
+  assert service.port == None
 }
 
 pub fn maximum_port_is_allowed_test() {
@@ -364,15 +479,11 @@ pub fn maximum_port_is_allowed_test() {
 id = \"example\"
 name = \"Example\"
 url = \"https://example.com\"
-health_url = \"https://example.com/health\"
-icon = \"🌐\"
-description = \"Example service\"
-category = \"Test\"
 port = 65535
 ",
     )
 
   let assert Ok([service]) = result
 
-  assert service.port == 65535
+  assert service.port == Some(65_535)
 }

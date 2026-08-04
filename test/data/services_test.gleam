@@ -1,17 +1,18 @@
 import data/services.{
   type ServiceConfig, Checking, Offline, Online, Service, ServiceConfig,
 }
+import gleam/option.{None, Some}
 
 fn config() -> ServiceConfig {
   ServiceConfig(
     id: "grafana",
     name: "Grafana",
     url: "https://grafana.example.com",
-    health_url: "https://grafana.example.com/api/health",
-    icon: "📊",
-    description: "Metrics dashboard",
-    category: "Monitoring",
-    port: 3000,
+    health_url: Some("https://grafana.example.com/api/health"),
+    icon: Some("📊"),
+    description: Some("Metrics dashboard"),
+    category: Some("Monitoring"),
+    port: Some(3000),
   )
 }
 
@@ -39,11 +40,19 @@ pub fn url_returns_service_url_test() {
   assert services.url(service) == "https://grafana.example.com"
 }
 
-pub fn health_url_returns_health_endpoint_test() {
+pub fn health_url_returns_configured_health_endpoint_test() {
   let service = services.from_config(config())
 
   assert services.health_url(service)
     == "https://grafana.example.com/api/health"
+}
+
+pub fn health_url_falls_back_to_service_url_test() {
+  let service_config = ServiceConfig(..config(), health_url: None)
+
+  let service = services.from_config(service_config)
+
+  assert services.health_url(service) == "https://grafana.example.com"
 }
 
 pub fn with_checking_status_preserves_other_fields_test() {
@@ -58,6 +67,12 @@ pub fn with_checking_status_preserves_other_fields_test() {
   ) = updated
 
   assert updated_config.id == "grafana"
+  assert updated_config.health_url
+    == Some("https://grafana.example.com/api/health")
+  assert updated_config.icon == Some("📊")
+  assert updated_config.description == Some("Metrics dashboard")
+  assert updated_config.category == Some("Monitoring")
+  assert updated_config.port == Some(3000)
 }
 
 pub fn successful_health_result_sets_online_test() {

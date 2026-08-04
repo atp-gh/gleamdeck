@@ -18,11 +18,11 @@ fn service(
       id: id,
       name: name,
       url: url,
-      health_url: url <> "/health",
-      icon: "◈",
-      description: description,
-      category: category,
-      port: 0,
+      health_url: Some(url <> "/health"),
+      icon: Some("◈"),
+      description: Some(description),
+      category: Some(category),
+      port: None,
     ),
     status: status,
     last_checked: 0.0,
@@ -81,15 +81,17 @@ pub fn empty_status_counts_has_no_entries_test() {
 }
 
 pub fn empty_query_returns_all_services_test() {
-  let result = service_collection.filter(fixtures(), "", None)
+  let items = fixtures()
+  let result = service_collection.filter(items, "", None)
 
-  assert result == fixtures()
+  assert result == items
 }
 
 pub fn whitespace_query_returns_all_services_test() {
-  let result = service_collection.filter(fixtures(), "   ", None)
+  let items = fixtures()
+  let result = service_collection.filter(items, "   ", None)
 
-  assert result == fixtures()
+  assert result == items
 }
 
 pub fn filter_matches_name_case_insensitively_test() {
