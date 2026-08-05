@@ -50,8 +50,9 @@ fn decode_site(table: Dict(String, Toml)) -> Result(SiteConfig, String) {
   use title <- result.try(required_string(table, "title"))
   use subtitle <- result.try(required_string(table, "subtitle"))
   use timezone <- result.try(optional_string(table, "timezone"))
+  use health_check <- result.try(required_bool(table, "health_check"))
 
-  Ok(SiteConfig(title:, subtitle:, timezone:))
+  Ok(SiteConfig(title:, subtitle:, timezone:, health_check:))
 }
 
 fn read_config(path: String) -> Result(String, String) {
@@ -129,6 +130,25 @@ fn optional_string(
         <> "` must be a string, but got "
         <> string.inspect(value),
       )
+  }
+}
+
+fn required_bool(
+  table: Dict(String, Toml),
+  field: String,
+) -> Result(Bool, String) {
+  case dict.get(table, field) {
+    Ok(tom.Bool(value)) -> Ok(value)
+
+    Ok(value) ->
+      Error(
+        "Field `"
+        <> field
+        <> "` must be a boolean, but got "
+        <> string.inspect(value),
+      )
+
+    Error(_) -> Error("Missing required field `" <> field <> "`")
   }
 }
 

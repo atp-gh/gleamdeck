@@ -50,4 +50,4 @@ Complete the configuration system refactor by introducing explicit optional-fiel
 
 - [x] Refactor `config/services.toml` to model optional service fields with `Option` while keeping essential fields required
 - [x] Refactor `config/config.toml` to model optional dashboard settings with `Option` and provide sensible fallback behavior
-- [ ] Add `health` Add an optional `health_check` boolean setting to `config/config.toml` to enable or disable service health checks
+- [x] Add an `health_check` boolean setting to `config/config.toml` to enable or disable service health checks

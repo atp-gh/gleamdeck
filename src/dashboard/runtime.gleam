@@ -43,8 +43,9 @@ fn config_decoder() -> decode.Decoder(SiteConfig) {
   use title <- decode.field("title", decode.string)
   use subtitle <- decode.field("subtitle", decode.string)
   use timezone <- decode.field("timezone", decode.optional(decode.string))
+  use health_check <- decode.field("health_check", decode.bool)
 
-  decode.success(SiteConfig(title:, subtitle:, timezone:))
+  decode.success(SiteConfig(title:, subtitle:, timezone:, health_check:))
 }
 
 fn services_decoder() -> decode.Decoder(List(ServiceConfig)) {

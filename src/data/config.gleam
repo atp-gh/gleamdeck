@@ -12,7 +12,12 @@ pub type MetaConfig {
 }
 
 pub type SiteConfig {
-  SiteConfig(title: String, subtitle: String, timezone: Option(String))
+  SiteConfig(
+    title: String,
+    subtitle: String,
+    timezone: Option(String),
+    health_check: Bool,
+  )
 }
 
 pub type BuildConfig {
@@ -34,11 +39,13 @@ pub fn default_meta() -> MetaConfig {
 
 /// Runtime configuration used before config.json has loaded.
 ///
-/// `None` means the dashboard should use the browser's timezone.
+/// `None` timezone means using the browser timezone.
+/// `None` health_check means health checks are enabled by default.
 pub fn default_site() -> SiteConfig {
   SiteConfig(
     title: "Gleam Deck",
     subtitle: "Self-hosted services dashboard",
     timezone: None,
+    health_check: True,
   )
 }

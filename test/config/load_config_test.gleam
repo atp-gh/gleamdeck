@@ -14,6 +14,7 @@ favicon = \"images/custom.png\"
 title = \"Home Lab\"
 subtitle = \"Private services\"
 timezone = \"Asia/Shanghai\"
+health_check = True
 "
 
 pub fn complete_config_decodes_test() {
@@ -31,6 +32,7 @@ pub fn complete_config_decodes_test() {
         title: "Home Lab",
         subtitle: "Private services",
         timezone: Some("Asia/Shanghai"),
+        health_check: True,
       ),
     ))
 }
@@ -63,6 +65,7 @@ subtitle = \"Private services\"
         title: "Home Lab",
         subtitle: "Private services",
         timezone: None,
+        health_check: True,
       ),
     ))
 }

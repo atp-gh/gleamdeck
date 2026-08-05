@@ -31,6 +31,7 @@ pub type Model {
   Model(
     config: app_config.SiteConfig,
     config_error: Option(String),
+    config_ready: Bool,
     services: List(Service),
     load_state: LoadState,
     query: String,
@@ -57,6 +58,7 @@ pub fn init(_args) -> #(Model, Effect(Msg)) {
     Model(
       config: app_config.default_site(),
       config_error: None,
+      config_ready: False,
       services: [],
       load_state: Loading,
       query: "",
@@ -78,25 +80,45 @@ pub fn init(_args) -> #(Model, Effect(Msg)) {
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     ConfigLoaded(Ok(config)) -> {
-      #(Model(..model, config:, config_error: None), effect.none())
+      let model =
+        Model(..model, config:, config_ready: True, config_error: None)
+
+      let command = case model.load_state, config.health_check {
+        Loaded, True -> refresh_all(model.services)
+        _, _ -> effect.none()
+      }
+
+      #(model, command)
     }
 
     ConfigLoaded(Error(reason)) -> {
-      #(Model(..model, config_error: Some(reason)), effect.none())
+      let model = Model(..model, config_ready: True, config_error: Some(reason))
+
+      let command = case model.load_state {
+        Loaded -> refresh_all(model.services)
+        _ -> effect.none()
+      }
+
+      #(model, command)
     }
 
     ServicesLoaded(Ok(configs)) -> {
       let services = list.map(configs, services.from_config)
 
-      #(
+      let model =
         Model(
           ..model,
           services:,
           load_state: Loaded,
           refreshed_at: clock.now_ms(),
-        ),
-        refresh_all(services),
-      )
+        )
+
+      let command = case model.config_ready, model.config.health_check {
+        True, True -> refresh_all(services)
+        _, _ -> effect.none()
+      }
+
+      #(model, command)
     }
 
     ServicesLoaded(Error(reason)) -> #(
@@ -109,24 +131,37 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(..model, active_category: category),
       effect.none(),
     )
-    RefreshAll -> {
-      let services = list.map(model.services, services.with_checking_status)
-      #(
-        Model(..model, services:, refreshed_at: clock.now_ms()),
-        refresh_all(services),
-      )
-    }
-    HealthResult(id, is_online) -> {
-      let services =
-        list.map(model.services, fn(item) {
-          case services.id(item) == id {
-            True -> services.with_health_result(item, is_online, clock.now_ms())
+    RefreshAll ->
+      case model.config.health_check {
+        False -> #(model, effect.none())
 
-            False -> item
-          }
-        })
-      #(Model(..model, services:), effect.none())
-    }
+        True -> {
+          let services = list.map(model.services, services.with_checking_status)
+
+          #(
+            Model(..model, services:, refreshed_at: clock.now_ms()),
+            refresh_all(services),
+          )
+        }
+      }
+    HealthResult(id, is_online) ->
+      case model.config.health_check {
+        False -> #(model, effect.none())
+
+        True -> {
+          let services =
+            list.map(model.services, fn(item) {
+              case services.id(item) == id {
+                True ->
+                  services.with_health_result(item, is_online, clock.now_ms())
+
+                False -> item
+              }
+            })
+
+          #(Model(..model, services:), effect.none())
+        }
+      }
     Tick(time) -> #(Model(..model, now: time), tick())
   }
 }
@@ -159,24 +194,27 @@ fn refresh_all(items: List(Service)) -> Effect(Msg) {
 }
 
 pub fn view(model: Model) -> Element(Msg) {
+  let health_enabled = model.config.health_check
   let categories = service_collection.categories(model.services)
   let counts = service_collection.status_counts(model.services)
   let online = count_of(counts, Online)
   let total = list.length(model.services)
+
   let visible =
     service_collection.filter(
       model.services,
       model.query,
       model.active_category,
     )
+
   html.main([attr.id("app-root")], [
     animated_background(),
     html.div([attr.class("wrap")], [
-      header(model, total, online, counts),
-      controls(model, categories),
+      header(model, total, online, counts, health_enabled),
+      controls(model, categories, health_enabled),
       config_notice(model.config_error),
-      services_content(model.load_state, visible),
-      footer(model),
+      services_content(model.load_state, visible, health_enabled),
+      footer(model, health_enabled),
     ]),
   ])
 }
@@ -193,6 +231,7 @@ fn config_notice(config_error: Option(String)) -> Element(Msg) {
 fn services_content(
   load_state: LoadState,
   visible: List(Service),
+  health_enabled: Bool,
 ) -> Element(Msg) {
   case load_state {
     Loading -> notice("Loading services…", "notice loading")
@@ -206,7 +245,9 @@ fn services_content(
           attr.class("grid"),
           attr.attribute("aria-label", "services"),
         ],
-        list.index_map(visible, render_card),
+        list.index_map(visible, fn(item, index) {
+          render_card(item, index, health_enabled)
+        }),
       )
   }
 }
@@ -229,6 +270,7 @@ fn header(
   total: Int,
   online: Int,
   counts: Dict(Status, Int),
+  health_enabled: Bool,
 ) -> Element(Msg) {
   let timezone = effective_timezone(model.config)
 
@@ -250,17 +292,34 @@ fn header(
         html.text(clock.format_date(model.now, timezone)),
       ]),
     ]),
-    html.div([attr.class("stats")], [
-      stat_card("total", int.to_string(total), "services"),
-      stat_card("online", int.to_string(online), "reachable"),
-      stat_card(
-        "checking",
-        int.to_string(count_of(counts, Checking)),
-        "probing",
-      ),
-      stat_card("offline", int.to_string(count_of(counts, Offline)), "down"),
-    ]),
+    stats(total, online, counts, health_enabled),
   ])
+}
+
+fn stats(
+  total: Int,
+  online: Int,
+  counts: Dict(Status, Int),
+  health_enabled: Bool,
+) -> Element(Msg) {
+  case health_enabled {
+    False ->
+      html.div([attr.class("stats")], [
+        stat_card("total", int.to_string(total), "services"),
+      ])
+
+    True ->
+      html.div([attr.class("stats")], [
+        stat_card("total", int.to_string(total), "services"),
+        stat_card("online", int.to_string(online), "reachable"),
+        stat_card(
+          "checking",
+          int.to_string(count_of(counts, Checking)),
+          "probing",
+        ),
+        stat_card("offline", int.to_string(count_of(counts, Offline)), "down"),
+      ])
+  }
 }
 
 fn stat_card(accent: String, value: String, label: String) -> Element(Msg) {
@@ -270,7 +329,11 @@ fn stat_card(accent: String, value: String, label: String) -> Element(Msg) {
   ])
 }
 
-fn controls(model: Model, categories: List(String)) -> Element(Msg) {
+fn controls(
+  model: Model,
+  categories: List(String),
+  health_enabled: Bool,
+) -> Element(Msg) {
   html.div([attr.class("controls")], [
     html.div([attr.class("search")], [
       html.span([attr.class("search-icon")], [html.text("⌕")]),
@@ -292,15 +355,24 @@ fn controls(model: Model, categories: List(String)) -> Element(Msg) {
         )
       })
     ]),
-    html.button(
-      [
-        attr.class("refresh"),
-        event.on_click(RefreshAll),
-        attr.title("Re-check all services"),
-      ],
-      [html.text("↻ Refresh")],
-    ),
+    refresh_button(health_enabled),
   ])
+}
+
+fn refresh_button(health_enabled: Bool) -> Element(Msg) {
+  case health_enabled {
+    False -> html.text("")
+
+    True ->
+      html.button(
+        [
+          attr.class("refresh"),
+          event.on_click(RefreshAll),
+          attr.title("Re-check all services"),
+        ],
+        [html.text("↻ Refresh")],
+      )
+  }
 }
 
 fn pill(active: Bool, label: String, msg: Msg) -> Element(Msg) {
@@ -363,12 +435,38 @@ fn render_service_icon(
   }
 }
 
-fn render_card(item: Service, index: Int) -> Element(Msg) {
+fn render_card_status(item: Service, health_enabled: Bool) -> Element(Msg) {
+  case health_enabled {
+    False -> html.text("")
+
+    True -> {
+      let word = presentation.status_class(item.status)
+
+      html.span([attr.class("card-status " <> word)], [
+        html.span([attr.class("dot")], []),
+        html.text(presentation.status_label(item.status)),
+      ])
+    }
+  }
+}
+
+fn card_class(item: Service, health_enabled: Bool) -> String {
+  case health_enabled {
+    False -> "card"
+    True -> "card " <> presentation.status_class(item.status)
+  }
+}
+
+fn render_card(
+  item: Service,
+  index: Int,
+  health_enabled: Bool,
+) -> Element(Msg) {
   let config = item.config
-  let word = presentation.status_class(item.status)
+
   html.a(
     [
-      attr.class("card " <> word),
+      attr.class(card_class(item, health_enabled)),
       attr.href(config.url),
       attr.target("_blank"),
       attr.rel("noopener noreferrer"),
@@ -378,13 +476,12 @@ fn render_card(item: Service, index: Int) -> Element(Msg) {
       html.div([attr.class("card-glow")], []),
       html.div([attr.class("card-top")], [
         render_service_icon(config.icon, config.name),
-        html.span([attr.class("card-status " <> word)], [
-          html.span([attr.class("dot")], []),
-          html.text(presentation.status_label(item.status)),
-        ]),
+        render_card_status(item, health_enabled),
       ]),
       html.div([attr.class("card-body")], [
-        html.h3([attr.class("card-name")], [html.text(config.name)]),
+        html.h3([attr.class("card-name")], [
+          html.text(config.name),
+        ]),
         render_description(config.description),
       ]),
       html.div([attr.class("card-foot")], [
@@ -397,16 +494,34 @@ fn render_card(item: Service, index: Int) -> Element(Msg) {
   )
 }
 
-fn footer(model: Model) -> Element(Msg) {
-  let seconds_ago = float.round({ model.now -. model.refreshed_at } /. 1000.0)
-  let label = case seconds_ago {
-    0 -> "just now"
-    n -> int.to_string(n) <> "s ago"
+fn footer(model: Model, health_enabled: Bool) -> Element(Msg) {
+  case health_enabled {
+    False ->
+      html.footer([attr.class("footer")], [
+        html.span([], [
+          html.text("built with Gleam + Lustre"),
+        ]),
+      ])
+
+    True -> {
+      let seconds_ago =
+        float.round({ model.now -. model.refreshed_at } /. 1000.0)
+
+      let label = case seconds_ago {
+        0 -> "just now"
+        n -> int.to_string(n) <> "s ago"
+      }
+
+      html.footer([attr.class("footer")], [
+        html.span([], [
+          html.text("built with Gleam + Lustre · "),
+        ]),
+        html.span([attr.class("refreshed")], [
+          html.text("last refresh " <> label),
+        ]),
+      ])
+    }
   }
-  html.footer([attr.class("footer")], [
-    html.span([], [html.text("built with Gleam + Lustre · ")]),
-    html.span([attr.class("refreshed")], [html.text("last refresh " <> label)]),
-  ])
 }
 
 fn animated_background() -> Element(Msg) {

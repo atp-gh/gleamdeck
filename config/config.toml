@@ -8,3 +8,4 @@ language = "en"
 title = "My Gleam Deck"
 subtitle = "My Self-hosted services"
 timezone = "UTC"
+health_check = true
