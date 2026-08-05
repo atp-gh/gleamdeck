@@ -14,7 +14,7 @@ favicon = \"images/custom.png\"
 title = \"Home Lab\"
 subtitle = \"Private services\"
 timezone = \"Asia/Shanghai\"
-health_check = True
+health_check = true
 "
 
 pub fn complete_config_decodes_test() {
@@ -50,6 +50,7 @@ favicon = \"favicon.ico\"
 [site]
 title = \"Home Lab\"
 subtitle = \"Private services\"
+health_check = true
 ",
     )
 
@@ -84,6 +85,7 @@ favicon = \"favicon.ico\"
 title = \"Home Lab\"
 subtitle = \"Private services\"
 timezone = \"   \"
+health_check = true
 ",
     )
 
@@ -106,6 +108,7 @@ favicon = \"favicon.ico\"
 title = \"Home Lab\"
 subtitle = \"Private services\"
 timezone = \"  Asia/Shanghai  \"
+health_check = true
 ",
     )
 
@@ -128,6 +131,7 @@ favicon = \"favicon.ico\"
 title = \"Home Lab\"
 subtitle = \"Private services\"
 timezone = 123
+health_check = true
 ",
     )
 
@@ -272,6 +276,7 @@ favicon = \"images/icon.png\"
 title = \"My \\\"Gleam\\\" Deck\"
 subtitle = \"Services\\\\Dashboard\"
 timezone = \"UTC\"
+health_check = true
 ",
     )
 
@@ -300,6 +305,7 @@ favicon = \"favicon.ico\"
 title = \"Home Lab\"
 subtitle = \"Services\"
 timezone = \"UTC\"
+health_check = true
 ",
     )
 
@@ -315,7 +321,7 @@ pub fn multiline_literal_strings_are_supported_test() {
       "
 [meta]
 title = \"Dashboard\"
-description = '''C:\\Users\\example
+description = '''C:\\\\Users\\\\example
 No escaping required'''
 language = \"en\"
 favicon = \"favicon.ico\"
@@ -324,12 +330,13 @@ favicon = \"favicon.ico\"
 title = \"Home Lab\"
 subtitle = \"Services\"
 timezone = \"UTC\"
+health_check = true
 ",
     )
 
   let assert Ok(config) = result
 
-  assert config.meta.description == "C:\\Users\\example\nNo escaping required"
+  assert config.meta.description == "C:\\\\Users\\\\example\nNo escaping required"
   assert config.site.timezone == Some("UTC")
 }
 
@@ -349,6 +356,7 @@ favicon = \"favicon.ico\"
 title = \"Home Lab\"
 subtitle = \"Private services\"
 timezone = \"UTC\"
+health_check = true
 ",
     )
 
