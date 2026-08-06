@@ -132,6 +132,7 @@ language = "en"
 title = "My Gleam Deck"
 subtitle = "My Self-hosted services"
 timezone = "UTC"
+health_check = true
 ```
 
 ### 5. Build the dashboard
@@ -192,6 +193,7 @@ language = "en"
 title = "My Gleam Deck"
 subtitle = "My Self-hosted services"
 timezone = "UTC"
+health_check = true
 ```
 
 > 📘 For the complete field reference, default values, parser limitations, and examples, see [docs/configuration.md](docs/configuration.md).

@@ -44,7 +44,7 @@ Currently, service cards only support a single Emoji or text character as an ico
 
 ## v0.4.0 - Configuration System Refactor
 
-**Status: Doing / Current**
+**Status: Done / Current**
 
 Complete the configuration system refactor by introducing explicit optional-field semantics across service and dashboard configuration.
 
